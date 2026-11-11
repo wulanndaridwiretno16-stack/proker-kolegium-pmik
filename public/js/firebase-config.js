@@ -1,13 +1,12 @@
-// Konfigurasi Firebase.
-// Salin dari Firebase Console → Project settings → Your apps → Web app → "firebaseConfig".
-// Selama apiKey masih kosong, aplikasi berjalan dalam MODE DEMO (data contoh, tersimpan di browser saja).
+// Konfigurasi Firebase (dari Firebase Console → Project settings → General → Your apps).
+// Nilai ini memang boleh tampil di kode situs; keamanan data dijaga oleh firestore.rules.
 export const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyCOoGRKXY10F7euqH0xypVI8Iwg6pBeJl4",
+  authDomain: "proker-kolegium-pmik.firebaseapp.com",
+  projectId: "proker-kolegium-pmik",
+  storageBucket: "proker-kolegium-pmik.firebasestorage.app",
+  messagingSenderId: "21484116126",
+  appId: "1:21484116126:web:31f0370240e74a7369838f"
 };
 
 // Hanya untuk pengujian lokal dengan Firebase Emulator. Biarkan false saat deploy.
