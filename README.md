@@ -67,6 +67,11 @@ Setiap `git push` berikutnya otomatis ter-deploy.
    bidang, dan status **Aktif**.
 4. Lengkapi **Profil Organisasi** (visi, misi, periode, struktur) dan daftar **Bidang**.
 
+## Syarat pengajuan kegiatan
+
+Usulan kegiatan baru bisa diajukan setelah memiliki minimal satu indikator keberhasilan dan minimal satu dokumen
+berkategori **TOR/KAK**, **Proposal**, atau **Dokumen Kegiatan** yang diunggah pada kegiatan tersebut.
+
 ## Kata sandi
 
 - Setiap pengguna memilih kata sandinya sendiri saat mendaftar (minimal 6 karakter, diketik dua kali).

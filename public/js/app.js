@@ -20,7 +20,7 @@ const ST = {
   disetujui: ['Disahkan', 'green'], berjalan: ['Berjalan', 'cyan'], selesai: ['Selesai', 'solid'], ditolak: ['Ditolak', 'red']
 };
 const AKTIF = ['disetujui', 'berjalan', 'selesai'];
-const KATEGORI = ['SK', 'Proposal', 'TOR/KAK', 'Undangan', 'Daftar Hadir', 'Dokumentasi', 'Laporan', 'AD/ART', 'Lainnya'];
+const KATEGORI = ['SK', 'Proposal', 'TOR/KAK', 'Dokumen Kegiatan', 'Undangan', 'Daftar Hadir', 'Dokumentasi', 'Laporan', 'AD/ART', 'Lainnya'];
 const JENIS_KEG = ['Kegiatan', 'Rapat', 'Pelatihan'];
 const SASARAN = ['PMIK', 'Dosen', 'Tenaga Kesehatan'];
 
@@ -85,6 +85,8 @@ const can = {
 const log = (k, aksi, catatan = '') => (k.riwayat = k.riwayat || []).push({ tanggal: today(), oleh: `${me().nama} (${ROLE[me().role]})`, aksi, catatan });
 const chip = s => `<span class="chip ${ST[s][1]}">${ST[s][0]}</span>`;
 const bar = (v, cls = '') => `<div class="prog"><div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, v || 0))}%"></i></div><span>${pct(v || 0)}</span></div>`;
+const DOK_USULAN = ['TOR/KAK', 'Proposal', 'Dokumen Kegiatan'];
+const hasDokUsulan = k => db.dokumen.some(d => d.kegiatanId === k.id && DOK_USULAN.includes(d.kategori));
 const hasLaporan = k => db.dokumen.some(d => d.kegiatanId === k.id && d.kategori === 'Laporan');
 const telat = k => k.status === 'berjalan' && k.selesai < today();
 const predikat = n => n == null ? '–' : n >= 90 ? 'Sangat Baik' : n >= 75 ? 'Baik' : n >= 60 ? 'Cukup' : 'Perlu Perbaikan';
@@ -217,7 +219,7 @@ V.pengajuan = () => {
   const ks = K().filter(k => !is('koordinator') || k.bidangId === me().bidangId).sort((a, b) => a.mulai.localeCompare(b.mulai));
   return head('Pengajuan Kegiatan', is('koordinator') ? `Usulan kegiatan ${bidang(me().bidangId)} — tahun ${ui.tahun}` : `Usulan kegiatan seluruh bidang — tahun ${ui.tahun}`, can.buat() ? `<button class="btn primary" data-act="kegAdd">+ Usulan kegiatan</button>` : '') + `
   <div class="card">${table(['Kegiatan', 'Program', 'Jadwal', 'Anggaran', 'Status', ''], ks.map(k => `<tr><td>${klink(k)}</td><td>${esc(program(k.programId))}</td><td class="nowrap">${tgl(k.mulai)} – ${tgl(k.selesai)}</td><td class="num">${rp(angg(k))}</td><td>${chip(k.status)}</td>
-    <td><div class="btns"><a class="btn sm" href="#/kegiatan/${k.id}">Buka</a>${can.edit(k) ? `<button class="btn sm primary" data-act="ajukan" data-id="${k.id}">Ajukan</button>` : ''}</div></td></tr>`)) || empty('Belum ada usulan kegiatan. Buat usulan, lengkapi indikator dan RAB, lalu ajukan ke sekretariat.')}</div>
+    <td><div class="btns"><a class="btn sm" href="#/kegiatan/${k.id}">Buka</a>${can.edit(k) ? `<button class="btn sm primary" data-act="ajukan" data-id="${k.id}">Ajukan</button>` : ''}</div></td></tr>`)) || empty('Belum ada usulan kegiatan. Buat usulan, lengkapi indikator, RAB, dan unggah KAK/proposal, lalu ajukan ke sekretariat.')}</div>
   <p class="small muted mt">Alur: Draf → Diajukan ke sekretariat → Terverifikasi → Disahkan ketua → Berjalan → Selesai dan dilaporkan.</p>`;
 };
 
@@ -321,7 +323,7 @@ const lapTable = (ks, tot, rl) => table(['No', 'Kegiatan', 'Bidang', 'Jadwal', '
 
 V.dokumen = () => {
   const ds = db.dokumen.filter(d => !ui.docKat || d.kategori === ui.docKat).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  return head('Dokumen', 'SK, proposal, TOR/KAK, undangan, daftar hadir, dokumentasi, dan laporan', `<select data-change="docKat" aria-label="Saring kategori" style="width:auto"><option value="">Semua kategori</option>${KATEGORI.map(k => `<option ${ui.docKat === k ? 'selected' : ''}>${k}</option>`).join('')}</select><button class="btn primary" data-act="docAdd">+ Unggah dokumen</button>`) + `
+  return head('Dokumen', 'SK, proposal, TOR/KAK, dokumen kegiatan, undangan, daftar hadir, dokumentasi, dan laporan', `<select data-change="docKat" aria-label="Saring kategori" style="width:auto"><option value="">Semua kategori</option>${KATEGORI.map(k => `<option ${ui.docKat === k ? 'selected' : ''}>${k}</option>`).join('')}</select><button class="btn primary" data-act="docAdd">+ Unggah dokumen</button>`) + `
   <div class="card">${docTable(ds) || empty('Belum ada dokumen')}</div>
   <p class="small muted mt">Berkas maksimal ±700 KB (foto dikecilkan otomatis). Untuk berkas lebih besar, simpan di Google Drive lalu tempel tautannya.</p>`;
 };
@@ -368,6 +370,7 @@ function vKegiatan(id) {
   return `<div class="phead"><div><a class="small" href="#/pengajuan">← Pengajuan Kegiatan</a><h1>${esc(k.nama)}</h1><p>${esc(bidang(k.bidangId))} · ${esc(k.jenis)} · ${chip(k.status)} ${k.nomor ? `· No. ${esc(k.nomor)}` : ''}</p></div><div class="sp"></div><div class="btns">${btn}</div></div>
   <div class="card"><div class="flow">${k.status === 'revisi' || k.status === 'ditolak' ? `<span class="cur">${ST[k.status][0]}</span>` : FL.map((s, i) => `<span class="${i < pos ? 'done' : i === pos ? 'cur' : ''}">${i + 1}. ${ST[s][0]}</span>`).join('')}</div>
     <dl class="kv mt"><dt>Program</dt><dd>${esc(program(k.programId))}</dd><dt>Tujuan</dt><dd>${esc(k.tujuan) || '–'}</dd><dt>Sasaran</dt><dd>${esc(k.sasaran) || '–'}</dd><dt>Jadwal</dt><dd>${tgl(k.mulai)} – ${tgl(k.selesai)}</dd><dt>Lokasi</dt><dd>${esc(k.lokasi) || '–'}</dd><dt>Penanggung jawab</dt><dd>${esc(k.penanggungJawab) || '–'}</dd><dt>Progres</dt><dd style="max-width:320px">${bar(k.progres, k.status === 'selesai' ? 'g' : '')}</dd></dl></div>
+  ${['draft', 'revisi'].includes(k.status) ? `<div class="card mt syarat"><h3>Syarat pengajuan</h3><ul><li class="${(k.indikator || []).length ? 'ok' : 'no'}">Minimal satu indikator keberhasilan</li><li class="${hasDokUsulan(k) ? 'ok' : 'no'}">KAK/TOR, proposal, atau dokumen kegiatan diunggah ${!hasDokUsulan(k) && milik(k) ? `<button class="btn sm primary" data-act="docAdd" data-id="${k.id}" data-kat="TOR/KAK">Unggah sekarang</button>` : ''}</li><li class="${(k.rab || []).length ? 'ok' : 'opt'}">Rencana anggaran biaya (dianjurkan)</li></ul></div>` : ''}
   <div class="grid g2 mt">
     <div class="card"><div class="chead"><h3>Indikator keberhasilan</h3>${ed ? `<button class="btn sm" data-act="indAdd" data-id="${k.id}">+ Indikator</button>` : ''}</div>
       ${table(['Indikator', 'Target', 'Realisasi', 'Capaian', ''], (k.indikator || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="num">${i.target} ${esc(i.satuan)}</td><td class="num">${i.realisasi || 0}</td><td class="num">${pct(i.target ? i.realisasi / i.target * 100 : 0)}</td><td><div class="btns">${ed ? `<button class="btn sm" data-act="indEdit" data-id="${k.id}" data-sub="${i.id}">Ubah</button><button class="btn sm danger" data-act="indDel" data-id="${k.id}" data-sub="${i.id}">Hapus</button>` : can.realInd(k) ? `<button class="btn sm" data-act="indReal" data-id="${k.id}" data-sub="${i.id}">Isi realisasi</button>` : ''}</div></td></tr>`)) || empty('Belum ada indikator. Setiap kegiatan perlu minimal satu indikator terukur.')}</div>
@@ -458,7 +461,7 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #666;padding:4p
   // kegiatan & alur
   kegAdd: () => kegForm(), kegEdit: ({ id }) => kegForm(keg(id)),
   kegDel: ({ id }) => { if (yakin('Hapus usulan kegiatan ini?')) { rm(db.kegiatan, id); location.hash = '#/pengajuan'; done('Usulan dihapus'); } },
-  ajukan: ({ id }) => { const k = keg(id); if (!(k.indikator || []).length) return toast('Lengkapi minimal satu indikator keberhasilan sebelum mengajukan.', true); if (!(k.rab || []).length && !yakin('RAB masih kosong. Ajukan tanpa anggaran?')) return; k.status = 'diajukan'; log(k, 'Diajukan ke sekretariat'); done('Usulan diajukan'); },
+  ajukan: ({ id }) => { const k = keg(id); if (!(k.indikator || []).length) return toast('Lengkapi minimal satu indikator keberhasilan sebelum mengajukan.', true); if (!hasDokUsulan(k)) { if (!location.hash.endsWith('/' + id)) location.hash = '#/kegiatan/' + id; return toast('Unggah KAK/TOR, proposal, atau dokumen kegiatan terlebih dahulu sebelum mengajukan.', true); } if (!(k.rab || []).length && !yakin('RAB masih kosong. Ajukan tanpa anggaran?')) return; k.status = 'diajukan'; log(k, 'Diajukan ke sekretariat'); done('Usulan diajukan'); },
   verif: ({ id }) => catatan('Verifikasi usulan', c => { const k = keg(id); k.status = 'diverifikasi'; log(k, 'Diverifikasi sekretariat, diteruskan ke ketua', c); }, false),
   revisi: ({ id }) => catatan('Minta revisi', c => { const k = keg(id); k.status = 'revisi'; log(k, 'Dikembalikan untuk revisi', c); }),
   tolak: ({ id }) => catatan('Tolak usulan', c => { const k = keg(id); k.status = 'ditolak'; log(k, 'Ditolak', c); }),
@@ -486,7 +489,7 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #666;padding:4p
   agDel: ({ id }) => { if (yakin('Hapus agenda ini?')) { rm(db.agenda, id); done(); } },
   calNav: ({ id }) => { const d = new Date(ui.cal.y, ui.cal.m + Number(id), 1); ui.cal = { y: d.getFullYear(), m: d.getMonth() }; render(); },
   // dokumen
-  docAdd: ({ id }) => form('Unggah dokumen', [{ name: 'judul', label: 'Judul dokumen', required: true, full: true }, { name: 'kategori', label: 'Kategori', type: 'select', options: KATEGORI.map(k => [k, k]) }, { name: 'kegiatanId', label: 'Terkait kegiatan', type: 'select', options: [['', '— umum —'], ...db.kegiatan.map(k => [k.id, k.nama])], value: id || '' }, { name: 'file', label: 'Berkas (maks ±700 KB)', type: 'file', full: true }, { name: 'url', label: 'atau tautan (Google Drive, dsb.)', type: 'url', full: true }], async v => {
+  docAdd: ({ id, kat }) => form('Unggah dokumen', [{ name: 'judul', label: 'Judul dokumen', required: true, full: true }, { name: 'kategori', label: 'Kategori', type: 'select', options: KATEGORI.map(k => [k, k]), value: kat || '' }, { name: 'kegiatanId', label: 'Terkait kegiatan', type: 'select', options: [['', '— umum —'], ...db.kegiatan.map(k => [k.id, k.nama])], value: id || '' }, { name: 'file', label: 'Berkas (maks ±700 KB)', type: 'file', full: true }, { name: 'url', label: 'atau tautan (Google Drive, dsb.)', type: 'url', full: true }], async v => {
     if (!v.file && !v.url) return 'Pilih berkas atau isi tautan.';
     const d = { id: uid(), judul: v.judul, kategori: v.kategori, kegiatanId: v.kegiatanId, url: v.url || '', namaBerkas: '', tanggal: today(), oleh: me().nama, olehId: st.uid, adaBerkas: false };
     if (v.file) { const data = await readFile(v.file); if (data.length > 950000) return 'Berkas terlalu besar (maks ±700 KB). Simpan di Google Drive lalu tempel tautannya.'; await S.fileSave(d.id, data); d.namaBerkas = v.file.name; d.adaBerkas = true; }

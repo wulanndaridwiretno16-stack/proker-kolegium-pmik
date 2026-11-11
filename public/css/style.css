@@ -93,6 +93,11 @@ dl.kv dt{color:var(--muted)}dl.kv dd{margin:0}
 .flow{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 0}
 .flow span{padding:3px 10px;border-radius:99px;background:var(--gray-l);font-size:12px;color:var(--muted)}
 .flow span.done{background:var(--green-l);color:var(--green)}.flow span.cur{background:var(--navy);color:#fff;font-weight:600}
+.syarat ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.syarat li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.syarat li::before{content:'✓';display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;background:var(--green-l);color:var(--green);flex:none}
+.syarat li.no::before{content:'!';background:var(--red-l);color:var(--red)}
+.syarat li.opt::before{content:'–';background:var(--gray-l);color:var(--muted)}
 .org{display:flex;flex-direction:column;gap:10px;align-items:center}
 .org .lvl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .org .box{border:1px solid var(--line);border-radius:10px;padding:8px 14px;text-align:center;background:#fff;min-width:150px;border-top:3px solid var(--blue)}
