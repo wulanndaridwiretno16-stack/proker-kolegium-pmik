@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function profPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function prof() { return get(profPath()).data; }
+    function active() { return signedIn() && exists(profPath()) && prof().aktif == true; }
+    function role(r) { return active() && prof().role in r; }
+    function sudahSetup() { return exists(/databases/$(database)/documents/meta/org); }
+
+    // Profil pengguna. Pendaftar pertama (sebelum meta/org ada) boleh menjadi admin;
+    // pendaftar berikutnya hanya boleh membuat profil nonaktif yang menunggu aktivasi admin.
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || active());
+      allow list: if active();
+      allow create: if signedIn() && request.auth.uid == uid && (
+        (!sudahSetup() && request.resource.data.role == 'admin') ||
+        (request.resource.data.role == 'koordinator' && request.resource.data.aktif == false && request.resource.data.bidangId == '')
+      );
+      allow update, delete: if role(['admin']);
+    }
+
+    match /meta/{doc} {
+      allow read: if signedIn();
+      allow write: if role(['admin', 'sekretaris']);
+    }
+
+    match /bidang/{id} {
+      allow read: if active();
+      allow write: if role(['admin']);
+    }
+
+    match /program/{id} {
+      allow read: if active();
+      allow create, update: if role(['admin', 'ketua', 'sekretaris'])
+        || (role(['koordinator']) && request.resource.data.jenis == 'bidang' && request.resource.data.bidangId == prof().bidangId);
+      allow delete: if role(['admin', 'ketua', 'sekretaris'])
+        || (role(['koordinator']) && resource.data.bidangId == prof().bidangId);
+    }
+
+    // Koordinator hanya dapat menulis kegiatan bidangnya sendiri.
+    // Urutan alur (draf → diajukan → …) dijaga oleh aplikasi sesuai peran.
+    match /kegiatan/{id} {
+      allow read: if active();
+      allow create: if role(['admin'])
+        || (role(['koordinator']) && request.resource.data.bidangId == prof().bidangId && request.resource.data.status == 'draft');
+      allow update: if role(['admin', 'ketua', 'sekretaris', 'bendahara'])
+        || (role(['koordinator']) && resource.data.bidangId == prof().bidangId && request.resource.data.bidangId == prof().bidangId
+            && !(request.resource.data.status in ['diverifikasi', 'disetujui', 'ditolak'] && request.resource.data.status != resource.data.status));
+      allow delete: if role(['admin'])
+        || (role(['koordinator']) && resource.data.bidangId == prof().bidangId && resource.data.status in ['draft', 'ditolak']);
+    }
+
+    match /agenda/{id} {
+      allow read: if active();
+      allow write: if role(['admin', 'sekretaris', 'koordinator']);
+    }
+
+    match /dokumen/{id} {
+      allow read, create: if active();
+      allow update, delete: if role(['admin', 'sekretaris']) || (active() && resource.data.olehId == request.auth.uid);
+    }
+
+    // Isi berkas (data URL). Batas ukuran dokumen Firestore 1 MiB.
+    match /files/{id} {
+      allow read, create: if active();
+      allow delete: if active();
+    }
+  }
+}
