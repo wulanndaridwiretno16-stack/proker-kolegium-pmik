@@ -50,7 +50,7 @@ function toast(msg, bad) {
 }
 const fbErr = e => ({
   'auth/invalid-credential': 'Email atau kata sandi salah.', 'auth/wrong-password': 'Email atau kata sandi salah.', 'auth/user-not-found': 'Akun tidak ditemukan.',
-  'auth/email-already-in-use': 'Email sudah terdaftar.', 'auth/weak-password': 'Kata sandi minimal 6 karakter.', 'auth/invalid-email': 'Format email tidak valid.',
+  'auth/email-already-in-use': 'Email sudah terdaftar.', 'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi beberapa saat.', 'auth/requires-recent-login': 'Silakan keluar lalu masuk kembali, kemudian ulangi.', 'auth/weak-password': 'Kata sandi minimal 6 karakter.', 'auth/invalid-email': 'Format email tidak valid.',
   'permission-denied': 'Akses ditolak oleh aturan keamanan (peran Anda tidak diizinkan).', 'auth/network-request-failed': 'Jaringan bermasalah.'
 }[e && e.code] || (e && e.message) || 'Terjadi kesalahan.');
 
@@ -130,8 +130,8 @@ function form(title, fields, onSave, okLabel = 'Simpan') {
   $('[data-close]', dlg).onclick = () => dlg.close();
   fm.onsubmit = async e => {
     e.preventDefault();
-    const v = {};
-    fields.forEach(f => { const el = fm.elements[f.name]; v[f.name] = f.type === 'number' ? Number(el.value || 0) : f.type === 'file' ? el.files[0] : el.value.trim(); });
+    const v = {}; $('.err', dlg).hidden = true;
+    fields.forEach(f => { const el = fm.elements[f.name]; v[f.name] = f.type === 'number' ? Number(el.value || 0) : f.type === 'file' ? el.files[0] : f.type === 'password' ? el.value : el.value.trim(); });
     try {
       const err = await onSave(v);
       if (err) { const b = $('.err', dlg); b.textContent = err; b.hidden = false; return; }
@@ -494,7 +494,9 @@ const A = {
     window.print();
   },
   // sesi
-  logout: () => S.logout(), menu: () => $('.side').classList.toggle('open'),
+  lupa: () => { const em = $('#auth') ? $('#auth').elements.email.value.trim() : ''; form('Lupa kata sandi', [{ name: 'email', label: 'Email akun Anda', type: 'email', required: true, full: true, value: em, hint: 'Tautan untuk membuat kata sandi baru akan dikirim ke email ini. Periksa juga folder Spam.' }], async v => { await S.resetPassword(v.email); toast('Jika email terdaftar, tautan atur ulang kata sandi sudah dikirim.'); }, 'Kirim tautan'); },
+  gantiSandi: () => form('Ubah kata sandi', [{ name: 'lama', label: 'Kata sandi saat ini', type: 'password', required: true, full: true }, { name: 'baru', label: 'Kata sandi baru', type: 'password', required: true, hint: 'Minimal 6 karakter' }, { name: 'baru2', label: 'Ulangi kata sandi baru', type: 'password', required: true }], async v => { if (v.baru.length < 6) return 'Kata sandi baru minimal 6 karakter.'; if (v.baru !== v.baru2) return 'Kata sandi baru dan ulangannya tidak sama.'; if (v.baru === v.lama) return 'Kata sandi baru harus berbeda dari yang lama.'; try { await S.changePassword(v.lama, v.baru); } catch (e) { if (/invalid-credential|wrong-password/.test(e.code || '')) return 'Kata sandi saat ini salah.'; throw e; } toast('Kata sandi berhasil diubah.'); }, 'Ubah kata sandi'),
+  logout: () => { ui.authTab = 'masuk'; ui.authErr = ''; S.logout(); }, menu: () => $('.side').classList.toggle('open'),
   authTab: ({ id }) => { ui.authTab = id; ui.authErr = ''; render(); },
   buatProfil: async () => { try { await S.ensureProfile(st.email.split('@')[0]); } catch (e) { toast(fbErr(e), true); } }
 };
@@ -513,9 +515,9 @@ function vAuth() {
   const daftar = ui.authTab === 'daftar';
   return `<div class="center"><div class="card login"><img src="assets/logo.png" alt="Kolegium Perekam Medis dan Informasi Kesehatan"><h2 style="text-align:center;margin-bottom:4px">Sistem Informasi Program Kerja</h2><p class="muted small" style="text-align:center;margin:0 0 14px">Perencanaan, pelaksanaan, monitoring, dan evaluasi</p>
     <div class="tabs"><button class="${daftar ? '' : 'on'}" data-act="authTab" data-id="masuk">Masuk</button><button class="${daftar ? 'on' : ''}" data-act="authTab" data-id="daftar">Daftar</button></div>
-    <form id="auth">${daftar ? `<label class="f">Nama lengkap<input name="nama" required></label>` : ''}<label class="f">Email<input name="email" type="email" required autocomplete="username"></label><label class="f">Kata sandi<input name="pw" type="password" required minlength="6" autocomplete="${daftar ? 'new-password' : 'current-password'}"></label>
+    <form id="auth">${daftar ? `<label class="f">Nama lengkap<input name="nama" required></label>` : ''}<label class="f">Email<input name="email" type="email" required autocomplete="username"></label><label class="f">Kata sandi${daftar ? '<small>Pilih sendiri, minimal 6 karakter</small>' : ''}<input name="pw" type="password" required minlength="6" autocomplete="${daftar ? 'new-password' : 'current-password'}"></label>${daftar ? `<label class="f">Ulangi kata sandi<input name="pw2" type="password" required minlength="6" autocomplete="new-password"></label>` : ''}
     ${ui.authErr ? `<div class="err" style="margin:0">${esc(ui.authErr)}</div>` : ''}<button class="btn primary" style="justify-content:center">${daftar ? 'Daftar' : 'Masuk'}</button>
-    ${daftar ? `<p class="small muted" style="margin:0">Pendaftar pertama menjadi Admin. Pendaftar berikutnya menunggu aktivasi oleh Admin.</p>` : `<button type="button" class="btn sm" id="lupa" style="align-self:center;border:0">Lupa kata sandi?</button>`}</form></div></div>`;
+    ${daftar ? `<p class="small muted" style="margin:0">Pendaftar pertama menjadi Admin. Pendaftar berikutnya menunggu aktivasi oleh Admin.</p>` : `<button type="button" class="btn" data-act="lupa" style="justify-content:center">Lupa kata sandi?</button>`}</form></div></div>`;
 }
 function vPending() {
   const p = st.profile;
@@ -554,7 +556,7 @@ function render() {
   <div class="main">${st.mode === 'demo' ? `<div class="demo"><b>Mode demo</b> — data contoh, tersimpan di browser ini saja. Isi <code>public/js/firebase-config.js</code> untuk memakai Firebase (lihat README).</div>` : ''}
     <header class="top"><button class="btn menu-btn" data-act="menu" aria-label="Menu">${ico('menu')}</button>
       <label class="small muted">Tahun <select data-change="tahun">${years.map(t => `<option ${t === ui.tahun ? 'selected' : ''}>${t}</option>`).join('')}<option value="+">+ Tambah tahun…</option></select></label><div class="sp"></div>
-      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="logout">Keluar</button>`}
+      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="gantiSandi">Ubah kata sandi</button><button class="btn sm" data-act="logout">Keluar</button>`}
     </header><main class="page">${route === 'kegiatan' ? vKegiatan(arg) : (V[route] || V.dashboard)()}</main></div></div>`;
   window.scrollTo(0, same ? y : 0);
 }
@@ -562,10 +564,10 @@ function bindAuth() {
   const f = $('#auth'); if (!f) return;
   f.onsubmit = async e => {
     e.preventDefault(); const v = Object.fromEntries(new FormData(f));
+    if (ui.authTab === 'daftar' && v.pw !== v.pw2) { ui.authErr = 'Kata sandi dan ulangannya tidak sama.'; render(); return; }
     try { ui.authErr = ''; if (ui.authTab === 'daftar') await S.register(v.nama.trim(), v.email.trim(), v.pw); else await S.login(v.email.trim(), v.pw); }
     catch (ex) { ui.authErr = fbErr(ex); render(); }
   };
-  const l = $('#lupa'); if (l) l.onclick = async () => { const em = f.elements.email.value.trim(); if (!em) return toast('Isi email terlebih dahulu.', true); try { await S.resetPassword(em); toast('Tautan atur ulang kata sandi dikirim ke email.'); } catch (ex) { toast(fbErr(ex), true); } };
 }
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) { if (!e.target.closest('.side')) $('.side')?.classList.remove('open'); return; }

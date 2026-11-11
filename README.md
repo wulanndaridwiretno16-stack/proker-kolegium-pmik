@@ -67,6 +67,14 @@ Setiap `git push` berikutnya otomatis ter-deploy.
    bidang, dan status **Aktif**.
 4. Lengkapi **Profil Organisasi** (visi, misi, periode, struktur) dan daftar **Bidang**.
 
+## Kata sandi
+
+- Setiap pengguna memilih kata sandinya sendiri saat mendaftar (minimal 6 karakter, diketik dua kali).
+- **Lupa kata sandi?** di halaman masuk mengirim tautan atur ulang ke email pengguna.
+- Setelah masuk, tombol **Ubah kata sandi** di kanan atas mengganti kata sandi (perlu kata sandi saat ini).
+- Email atur ulang dikirim oleh Firebase. Teks dan nama pengirimnya dapat diubah di
+  Firebase Console → Authentication → Templates → Password reset.
+
 ## Hak akses
 
 | Wewenang | Admin | Ketua Kolegium | Sekretaris | Bendahara | Ketua Bidang |

@@ -188,6 +188,12 @@ export async function ensureProfile(nama) {
   }
 }
 export async function resetPassword(email) { await fb.AU.sendPasswordResetEmail(fb.auth, email); }
+// Ganti kata sandi: verifikasi ulang dengan kata sandi lama, lalu simpan yang baru.
+export async function changePassword(lama, baru) {
+  const { AU, auth } = fb, u = auth.currentUser;
+  await AU.reauthenticateWithCredential(u, AU.EmailAuthProvider.credential(u.email, lama));
+  await AU.updatePassword(u, baru);
+}
 export async function logout() { if (fb) await fb.AU.signOut(fb.auth); }
 export function switchUser(id) { state.uid = id; try { localStorage.setItem(LS + ':uid', id); } catch (e) { /* abaikan */ } notify(); }
 export function resetDemo() {
