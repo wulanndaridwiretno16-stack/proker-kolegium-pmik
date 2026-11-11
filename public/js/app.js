@@ -208,7 +208,7 @@ V.perencanaan = () => {
     return `<tr><td><b>${esc(p.nama)}</b><div class="small muted">${esc(p.deskripsi)}</div></td>${tab === 'bidang' ? `<td>${esc(bidang(p.bidangId))}</td>` : ''}<td>${esc(p.sasaran) || '–'}</td><td class="num">${ks.length}</td><td style="min-width:140px">${bar(avg(ak.map(k => k.progres || 0)) || 0)}</td>
     <td>${edit ? `<div class="btns"><button class="btn sm" data-act="progEdit" data-id="${p.id}">Ubah</button><button class="btn sm danger" data-act="progDel" data-id="${p.id}">Hapus</button></div>` : ''}</td></tr>`;
   });
-  return head('Perencanaan Program', 'Program strategis, program tahunan, dan program per bidang', `<button class="btn" data-act="tahunAdd">+ Tahun</button>` + (can.program() ? `<button class="btn primary" data-act="progAdd">+ Program</button>` : '')) + `
+  return head('Perencanaan Program', 'Program strategis, program tahunan, dan program per bidang', `<button class="btn" data-act="progWord">Unduh Word</button><button class="btn" data-act="progPdf">Cetak / PDF</button><button class="btn" data-act="tahunAdd">+ Tahun</button>` + (can.program() ? `<button class="btn primary" data-act="progAdd">+ Program</button>` : '')) + `
   <div class="card"><div class="tabs">${[['strategis', 'Program strategis'], ['tahunan', `Program tahunan ${ui.tahun}`], ['bidang', `Program per bidang ${ui.tahun}`]].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-act="progTab" data-id="${k}">${l}</button>`).join('')}</div>
   ${table(['Program', ...(tab === 'bidang' ? ['Bidang'] : []), 'Sasaran', 'Kegiatan', 'Progres', ''], rows) || empty('Belum ada program pada kategori ini')}</div>`;
 };
@@ -340,6 +340,19 @@ V.pengguna = () => {
   ${demo && adm ? `<div class="card mt"><h3>Data demo</h3><p class="muted" style="margin:0 0 10px">Mode demo menyimpan data di browser ini saja. Hubungkan Firebase (lihat README) agar data tersimpan bersama.</p><button class="btn danger" data-act="resetDemo">Kembalikan data contoh</button></div>` : ''}`;
 };
 
+/* ---------- dokumen program kerja (Word / PDF) ---------- */
+function progDoc() {
+  const y = ui.tahun, ketua = (db.org.struktur || []).find(s => /^ketua(?! bidang)/i.test(s.jabatan));
+  const tbl = list => list.length ? `<table><thead><tr><th style="width:4%">No</th><th style="width:24%">Program</th><th style="width:16%">Sasaran</th><th style="width:22%">Deskripsi</th><th style="width:22%">Kegiatan (${y})</th><th style="width:12%">Anggaran</th></tr></thead><tbody>${list.map((p, i) => {
+    const ks = db.kegiatan.filter(k => k.programId === p.id && (k.mulai || '').slice(0, 4) === y);
+    return `<tr><td>${i + 1}</td><td><b>${esc(p.nama)}</b></td><td>${esc(p.sasaran) || '–'}</td><td>${esc(p.deskripsi) || '–'}</td><td>${ks.map(k => `${esc(k.nama)} (${tgl(k.mulai)} – ${tgl(k.selesai)}; ${ST[k.status][0]})`).join('<br>') || '–'}</td><td style="text-align:right">${rp(sum(ks.map(angg)))}</td></tr>`;
+  }).join('')}</tbody></table>` : '<p>Belum ada program.</p>';
+  const P = j => db.program.filter(p => p.jenis === j && (j === 'strategis' || p.tahun === y));
+  const perB = db.bidang.map((b, i) => ({ b, i, list: P('bidang').filter(p => p.bidangId === b.id) })).filter(x => x.list.length);
+  const body = `<h3>A. Program strategis</h3>${tbl(P('strategis'))}<h3>B. Program tahunan ${y}</h3>${tbl(P('tahunan'))}<h3>C. Program per bidang ${y}</h3>${perB.map(x => `<p><b>Bidang ${x.i + 1} — ${esc(x.b.nama)}</b></p>${tbl(x.list)}`).join('') || '<p>Belum ada program.</p>'}`;
+  return { judul: `PROGRAM KERJA TAHUN ${y}`, nama: `Program Kerja ${y} - Kolegium PMIK`, body, ttd: `Jakarta, ${tgl(today())}<br>Ketua Kolegium<br><br><br><br><b>${esc(ketua ? ketua.nama : '')}</b>` };
+}
+
 /* ---------- detail kegiatan ---------- */
 function vKegiatan(id) {
   const k = keg(id); if (!k) return head('Kegiatan tidak ditemukan', '') + `<a class="btn" href="#/pengajuan">Kembali</a>`;
@@ -420,6 +433,21 @@ const A = {
   orgEdit: () => { const o = db.org; form('Sunting profil organisasi', [{ name: 'nama', label: 'Nama organisasi', required: true, full: true, value: o.nama }, { name: 'alamat', label: 'Alamat', full: true, value: o.alamat }, { name: 'email', label: 'Email', value: o.email }, { name: 'telepon', label: 'Telepon', value: o.telepon }, { name: 'periode', label: 'Periode kepengurusan', value: o.periode }, { name: 'batasPengajuan', label: 'Batas pengajuan program kerja', type: 'date', value: o.batasPengajuan }, { name: 'visi', label: 'Visi', type: 'textarea', value: o.visi }, { name: 'misi', label: 'Misi (satu butir per baris)', type: 'textarea', value: o.misi }, { name: 'adart', label: 'Ringkasan AD/ART', type: 'textarea', value: o.adart }], v => { Object.assign(db.org, v); }); },
   strukAdd: () => strukForm(), strukEdit: ({ id }) => strukForm(db.org.struktur.find(s => s.id === id)),
   strukDel: ({ id }) => { if (yakin('Hapus jabatan ini?')) { rm(db.org.struktur, id); done(); } },
+  progPdf: () => { const d = progDoc(); $('#print').innerHTML = `<img class="kop" src="assets/kop.jpg" alt=""><h2>${d.judul}</h2><div class="sub">${esc(db.org.periode ? 'Periode kepengurusan ' + db.org.periode + ' · ' : '')}dicetak ${tgl(today())}</div>${d.body}<div class="ttd"><div>${d.ttd}</div></div>`; window.print(); },
+  progWord: () => {
+    const d = progDoc(), o = db.org;
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(d.nama)}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>@page WordSection1{size:841.9pt 595.3pt;mso-page-orientation:landscape;margin:2cm}div.WordSection1{page:WordSection1}
+body{font-family:Calibri,Arial,sans-serif;font-size:11pt}h1{font-size:15pt;color:#1f4391;margin:0}h2{font-size:14pt;text-align:center;margin:14pt 0 2pt}h3{font-size:12pt;margin:14pt 0 4pt}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #666;padding:4pt 6pt;vertical-align:top;font-size:10pt}th{background:#e8f0fb;text-align:left}
+.kop{border-bottom:2.25pt solid #1f4391;padding-bottom:6pt}.kop p{margin:0;font-size:10pt;color:#333}.c{text-align:center}</style></head>
+<body><div class="WordSection1"><div class="kop"><h1>${esc((o.nama || '').toUpperCase())}</h1><p>${esc(o.namaEn || '')}</p><p>${esc(o.alamat || '')} · ${esc(o.email || '')} · ${esc(o.telepon || '')}</p></div>
+<h2>${d.judul}</h2><p class="c">${esc(o.periode ? 'Periode kepengurusan ' + o.periode : '')}</p>${d.body.replace(/<table>/g, '<table border="1" cellspacing="0" cellpadding="5">')}
+<br><table style="border:0;width:100%"><tr><td style="border:0;width:65%"></td><td style="border:0;text-align:center">${d.ttd}</td></tr></table></div></body></html>`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' })); a.download = d.nama + '.doc'; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    toast('Berkas Word diunduh.');
+  },
   // tahun
   tahunAdd: () => form('Tambah tahun program kerja', [{ name: 'tahun', label: 'Tahun', type: 'number', min: 2000, max: 2100, required: true, full: true, value: Number(daftarTahun().slice(-1)[0]) + 1, hint: 'Tahun dibuka untuk penyusunan program dan usulan kegiatan. Tahun tersimpan di daftar setelah ada program atau kegiatan di dalamnya.' }], v => { if (!Number.isInteger(v.tahun) || v.tahun < 2000 || v.tahun > 2100) return 'Isi tahun antara 2000 dan 2100.'; setTahun(v.tahun); }, 'Buka tahun'),
   // program
