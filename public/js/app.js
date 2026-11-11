@@ -330,7 +330,7 @@ V.pengguna = () => {
   <div class="card"><h3>Pengguna</h3>${table(['Nama', 'Email', 'Peran', 'Bidang', 'Status', ''], db.users.map(u => `<tr><td><b>${esc(u.nama)}</b>${u.id === st.uid ? ' <span class="chip blue">Anda</span>' : ''}</td><td>${esc(u.email)}</td><td>${ROLE[u.role] || esc(u.role)}</td><td>${u.role === 'koordinator' ? esc(bidang(u.bidangId)) : '–'}</td><td><span class="chip ${u.aktif ? 'green' : 'amber'}">${u.aktif ? 'Aktif' : 'Menunggu aktivasi'}</span></td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="userEdit" data-id="${u.id}">Ubah</button>${u.id !== st.uid ? `<button class="btn sm danger" data-act="userDel" data-id="${u.id}">Hapus</button>` : ''}</div>` : ''}</td></tr>`))}</div>
   <div class="grid g2 mt">
     <div class="card"><div class="chead"><h3>Bidang</h3>${adm ? `<button class="btn sm" data-act="bidAdd">+ Bidang</button>` : ''}</div>${table(['Nama bidang', 'Ketua bidang', ''], db.bidang.map(b => `<tr><td>${esc(b.nama)}</td><td>${esc(db.users.filter(u => u.role === 'koordinator' && u.bidangId === b.id).map(u => u.nama).join(', ')) || '–'}</td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="bidEdit" data-id="${b.id}">Ubah</button><button class="btn sm danger" data-act="bidDel" data-id="${b.id}">Hapus</button></div>` : ''}</td></tr>`)) || empty('Belum ada bidang')}</div>
-    <div class="card"><h3>Hak akses per peran</h3>${table(['Wewenang', 'Admin', 'Ketua Kol.', 'Sekr.', 'Bend.', 'Ketua Bid.'], M.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td>${v === 1 ? '✓' : v ? `<span class="small">${v}</span>` : '<span class="muted">–</span>'}</td>`).join('')}</tr>`))}</div>
+    <div class="card"><h3>Hak akses per peran</h3><p class="small muted" style="margin:0 0 8px">Admin merangkap semua fungsi (ketua kolegium, sekretaris, bendahara, dan ketua bidang mana pun). Peran sekretaris dan bendahara boleh dipegang lebih dari satu orang.</p>${table(['Wewenang', 'Admin', 'Ketua Kol.', 'Sekr.', 'Bend.', 'Ketua Bid.'], M.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td>${v === 1 ? '✓' : v ? `<span class="small">${v}</span>` : '<span class="muted">–</span>'}</td>`).join('')}</tr>`))}</div>
   </div>
   ${demo && adm ? `<div class="card mt"><h3>Data demo</h3><p class="muted" style="margin:0 0 10px">Mode demo menyimpan data di browser ini saja. Hubungkan Firebase (lihat README) agar data tersimpan bersama.</p><button class="btn danger" data-act="resetDemo">Kembalikan data contoh</button></div>` : ''}`;
 };
@@ -485,12 +485,12 @@ const A = {
     else { const csv = s1.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n'), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = nama + '.csv'; a.click(); toast('Pustaka Excel tidak termuat — diekspor sebagai CSV.'); }
   },
   lapPdf: () => {
-    const { p, ks, tot, rl } = lapData(), nb = nilaiBidang(ks).filter(x => x.n), ketua = (db.org.struktur || []).find(s => /^ketua/i.test(s.jabatan));
+    const { p, ks, tot, rl } = lapData(), nb = nilaiBidang(ks).filter(x => x.n), ketua = (db.org.struktur || []).find(s => /^ketua(?! bidang)/i.test(s.jabatan));
     $('#print').innerHTML = `<img class="kop" src="assets/kop.jpg" alt=""><h2>LAPORAN CAPAIAN PROGRAM KERJA</h2><div class="sub">${esc(p.label)} · dicetak ${tgl(today())}</div>
       <p>Jumlah kegiatan: <b>${ks.length}</b> (${ks.filter(k => k.status === 'selesai').length} selesai, ${ks.filter(k => k.status === 'berjalan').length} berjalan). Anggaran <b>${rp(tot)}</b>, realisasi <b>${rp(rl)}</b> (${pct(tot ? rl / tot * 100 : 0)}).</p>
       <h3>A. Capaian kegiatan</h3>${lapTable(ks, tot, rl) || '<p>Tidak ada kegiatan pada periode ini.</p>'}
       <h3>B. Penilaian bidang</h3>${table(['Bidang', 'Kegiatan', 'Capaian indikator', 'Progres rata-rata', 'Nilai', 'Predikat'], nb.map(x => `<tr><td>${esc(x.b.nama)}</td><td class="num">${x.n}</td><td class="num">${pct(x.c)}</td><td class="num">${pct(x.p)}</td><td class="num">${x.nilai.toFixed(1)}</td><td>${predikat(x.nilai)}</td></tr>`)) || '<p>–</p>'}
-      <div class="ttd"><div>Jakarta, ${tgl(today())}<br>Ketua<br><br><br><br><b>${esc(ketua ? ketua.nama : '')}</b></div></div>`;
+      <div class="ttd"><div>Jakarta, ${tgl(today())}<br>Ketua Kolegium<br><br><br><br><b>${esc(ketua ? ketua.nama : '')}</b></div></div>`;
     window.print();
   },
   // sesi
@@ -535,6 +535,8 @@ function migrasiBidang() {
   migrated = true; let ubah = false;
   S.BIDANG_LAMA.forEach((lama, i) => { const b = db.bidang.find(x => x.id === 'b' + (i + 1)); if (b && b.nama === lama) { b.nama = S.BIDANG_DEFAULT[i]; ubah = true; } });
   if (ubah && !(db.org.struktur || []).length) db.org.struktur = S.strukturBidang();
+  const st0 = db.org.struktur = db.org.struktur || [];
+  if (!st0.some(x => /^ketua(?! bidang)/i.test(x.jabatan))) { st0.unshift(S.strukturKetua()); ubah = true; }
   if (ubah) S.commit();
 }
 function render() {

@@ -8,7 +8,7 @@ export const state = {
   ready: false, authed: false, loaded: false, uid: null, email: '', profile: null
 };
 
-const LS = 'pmik-proker-demo-v2';
+const LS = 'pmik-proker-demo-v3';
 let notify = () => {}, onErr = () => {};
 let fb = null, cache = {}, unsubs = [], subscribed = false, got = new Set();
 
@@ -22,12 +22,14 @@ export function orgDefault() {
     namaEn: 'Indonesian College of Medical Records and Health Information',
     alamat: 'Jl Hang Jebat III Blok F3, Kebayoran Baru, Jakarta Selatan 12120',
     email: 'kolegium-pmik@kki.go.id', telepon: '+62 812-2028-6333',
-    periode: '', visi: '', misi: '', adart: '', batasPengajuan: '', struktur: strukturBidang()
+    periode: '', visi: '', misi: '', adart: '', batasPengajuan: '', struktur: [strukturKetua(), ...strukturBidang()]
   };
 }
 export const BIDANG_DEFAULT = ['Evaluasi dan Ujian', 'Kurikulum', 'Pengembangan Kompetensi', 'Mutu dan Akreditasi', 'Keanggotaan dan Kerja Sama'];
 export const BIDANG_LAMA = ['Pendidikan dan Kurikulum', 'Uji Kompetensi', 'Pengembangan Profesi Berkelanjutan', 'Penelitian dan Publikasi', 'Kerja Sama dan Humas'];
 export const KETUA_BIDANG = ['Ari Sukawan', 'Deasy Rosmala Dewi', 'Welly Satria Dewi', 'Laela Indawati', 'Aras Rasyid'];
+export const KETUA_KOLEGIUM = 'Dr. Tedy Hidayat, S.St., RMIK., M.MRS';
+export const strukturKetua = () => ({ id: 'sk1', jabatan: 'Ketua Kolegium', nama: KETUA_KOLEGIUM, level: 1 });
 export const strukturBidang = () => BIDANG_DEFAULT.map((b, i) => ({ id: 'sb' + (i + 1), jabatan: `Ketua Bidang ${i + 1} — ${b}`, nama: KETUA_BIDANG[i], level: 3 }));
 
 /* ---------- data contoh untuk mode demo ---------- */
@@ -37,9 +39,11 @@ function seedDemo() {
   const bidang = BIDANG_DEFAULT.map((nama, i) => ({ id: 'b' + (i + 1), nama }));
   const users = [
     { id: 'u1', nama: 'Administrator', email: 'admin@contoh.id', role: 'admin', bidangId: '', aktif: true },
-    { id: 'u2', nama: 'Ketua Kolegium', email: 'ketua@contoh.id', role: 'ketua', bidangId: '', aktif: true },
-    { id: 'u3', nama: 'Sekretaris', email: 'sekretaris@contoh.id', role: 'sekretaris', bidangId: '', aktif: true },
-    { id: 'u4', nama: 'Bendahara', email: 'bendahara@contoh.id', role: 'bendahara', bidangId: '', aktif: true },
+    { id: 'u2', nama: KETUA_KOLEGIUM, email: 'ketua@contoh.id', role: 'ketua', bidangId: '', aktif: true },
+    { id: 'u3', nama: 'Sekretaris 1', email: 'sekretaris1@contoh.id', role: 'sekretaris', bidangId: '', aktif: true },
+    { id: 'u10', nama: 'Sekretaris 2', email: 'sekretaris2@contoh.id', role: 'sekretaris', bidangId: '', aktif: true },
+    { id: 'u4', nama: 'Bendahara 1', email: 'bendahara1@contoh.id', role: 'bendahara', bidangId: '', aktif: true },
+    { id: 'u11', nama: 'Bendahara 2', email: 'bendahara2@contoh.id', role: 'bendahara', bidangId: '', aktif: true },
     ...bidang.map((b, i) => ({ id: 'u' + (i + 5), nama: KETUA_BIDANG[i], email: `bidang${i + 1}@contoh.id`, role: 'koordinator', bidangId: b.id, aktif: true }))
   ];
   const program = [
@@ -84,8 +88,8 @@ function seedDemo() {
     adart: 'Ringkasan AD/ART dapat ditulis di sini; berkas lengkap diunggah di menu Dokumen.',
     batasPengajuan: d(12, 15),
     struktur: [
-      { id: 's1', jabatan: 'Ketua', nama: '(isi nama)', level: 1 }, { id: 's2', jabatan: 'Sekretaris', nama: '(isi nama)', level: 2 },
-      { id: 's3', jabatan: 'Bendahara', nama: '(isi nama)', level: 2 },
+      strukturKetua(), { id: 's2', jabatan: 'Sekretaris 1', nama: '(isi nama)', level: 2 }, { id: 's5', jabatan: 'Sekretaris 2', nama: '(isi nama)', level: 2 },
+      { id: 's3', jabatan: 'Bendahara 1', nama: '(isi nama)', level: 2 }, { id: 's6', jabatan: 'Bendahara 2', nama: '(isi nama)', level: 2 },
       ...strukturBidang()
     ]
   };
