@@ -14,7 +14,7 @@ const days = (a, b) => Math.round((D(b) - D(a)) / 864e5);
 const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
 const pct = n => (n == null || isNaN(n) ? '–' : Math.round(n) + '%');
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const ROLE = { admin: 'Admin', ketua: 'Ketua', sekretaris: 'Sekretaris', bendahara: 'Bendahara', koordinator: 'Koordinator Bidang' };
+const ROLE = { admin: 'Admin', ketua: 'Ketua Kolegium', sekretaris: 'Sekretaris', bendahara: 'Bendahara', koordinator: 'Ketua Bidang' };
 const ST = {
   draft: ['Draf', ''], diajukan: ['Diajukan', 'blue'], revisi: ['Perlu Revisi', 'amber'], diverifikasi: ['Terverifikasi', 'indigo'],
   disetujui: ['Disahkan', 'green'], berjalan: ['Berjalan', 'cyan'], selesai: ['Selesai', 'solid'], ditolak: ['Ditolak', 'red']
@@ -325,12 +325,12 @@ const docTable = ds => table(['Dokumen', 'Kategori', 'Kegiatan', 'Diunggah', '']
 V.pengguna = () => {
   const adm = is('admin'), demo = st.mode === 'demo';
   const M = [['Kelola pengguna, bidang, dan hak akses', 1, 0, 0, 0, 0], ['Sunting profil organisasi', 1, 0, 1, 0, 0], ['Kelola program kerja', 1, 1, 1, 0, 'bidang sendiri'], ['Buat dan ajukan usulan kegiatan', 1, 0, 0, 0, 'bidang sendiri'], ['Verifikasi usulan / minta revisi', 1, 0, 1, 0, 0], ['Setujui dan sahkan program', 1, 1, 0, 0, 0], ['Perbarui progres, kendala, realisasi indikator', 1, 0, 0, 0, 'bidang sendiri'], ['Catat realisasi biaya', 1, 0, 0, 1, 0], ['Catat tindak lanjut kendala', 1, 0, 1, 0, 'bidang sendiri'], ['Kelola agenda', 1, 0, 1, 0, 1], ['Unggah dokumen, lihat dashboard dan laporan', 1, 1, 1, 1, 1]];
-  return head('Manajemen Pengguna', 'Admin, ketua, sekretaris, bendahara, dan koordinator bidang', adm && demo ? `<button class="btn primary" data-act="userAdd">+ Pengguna</button>` : '') + `
+  return head('Manajemen Pengguna', 'Admin, ketua kolegium, sekretaris, bendahara, dan ketua bidang', adm && demo ? `<button class="btn primary" data-act="userAdd">+ Pengguna</button>` : '') + `
   ${!demo ? `<div class="card" style="margin-bottom:14px"><b>Cara menambah pengguna:</b> pengurus mendaftar sendiri di halaman masuk (tab “Daftar”), lalu Admin mengaktifkan akun serta menetapkan peran dan bidangnya di tabel ini.</div>` : ''}
   <div class="card"><h3>Pengguna</h3>${table(['Nama', 'Email', 'Peran', 'Bidang', 'Status', ''], db.users.map(u => `<tr><td><b>${esc(u.nama)}</b>${u.id === st.uid ? ' <span class="chip blue">Anda</span>' : ''}</td><td>${esc(u.email)}</td><td>${ROLE[u.role] || esc(u.role)}</td><td>${u.role === 'koordinator' ? esc(bidang(u.bidangId)) : '–'}</td><td><span class="chip ${u.aktif ? 'green' : 'amber'}">${u.aktif ? 'Aktif' : 'Menunggu aktivasi'}</span></td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="userEdit" data-id="${u.id}">Ubah</button>${u.id !== st.uid ? `<button class="btn sm danger" data-act="userDel" data-id="${u.id}">Hapus</button>` : ''}</div>` : ''}</td></tr>`))}</div>
   <div class="grid g2 mt">
-    <div class="card"><div class="chead"><h3>Bidang</h3>${adm ? `<button class="btn sm" data-act="bidAdd">+ Bidang</button>` : ''}</div>${table(['Nama bidang', 'Koordinator', ''], db.bidang.map(b => `<tr><td>${esc(b.nama)}</td><td>${esc(db.users.filter(u => u.role === 'koordinator' && u.bidangId === b.id).map(u => u.nama).join(', ')) || '–'}</td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="bidEdit" data-id="${b.id}">Ubah</button><button class="btn sm danger" data-act="bidDel" data-id="${b.id}">Hapus</button></div>` : ''}</td></tr>`)) || empty('Belum ada bidang')}</div>
-    <div class="card"><h3>Hak akses per peran</h3>${table(['Wewenang', 'Admin', 'Ketua', 'Sekr.', 'Bend.', 'Koord.'], M.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td>${v === 1 ? '✓' : v ? `<span class="small">${v}</span>` : '<span class="muted">–</span>'}</td>`).join('')}</tr>`))}</div>
+    <div class="card"><div class="chead"><h3>Bidang</h3>${adm ? `<button class="btn sm" data-act="bidAdd">+ Bidang</button>` : ''}</div>${table(['Nama bidang', 'Ketua bidang', ''], db.bidang.map(b => `<tr><td>${esc(b.nama)}</td><td>${esc(db.users.filter(u => u.role === 'koordinator' && u.bidangId === b.id).map(u => u.nama).join(', ')) || '–'}</td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="bidEdit" data-id="${b.id}">Ubah</button><button class="btn sm danger" data-act="bidDel" data-id="${b.id}">Hapus</button></div>` : ''}</td></tr>`)) || empty('Belum ada bidang')}</div>
+    <div class="card"><h3>Hak akses per peran</h3>${table(['Wewenang', 'Admin', 'Ketua Kol.', 'Sekr.', 'Bend.', 'Ketua Bid.'], M.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td>${v === 1 ? '✓' : v ? `<span class="small">${v}</span>` : '<span class="muted">–</span>'}</td>`).join('')}</tr>`))}</div>
   </div>
   ${demo && adm ? `<div class="card mt"><h3>Data demo</h3><p class="muted" style="margin:0 0 10px">Mode demo menyimpan data di browser ini saja. Hubungkan Firebase (lihat README) agar data tersimpan bersama.</p><button class="btn danger" data-act="resetDemo">Kembalikan data contoh</button></div>` : ''}`;
 };
@@ -396,8 +396,8 @@ const rabFields = x => [{ name: 'uraian', label: 'Uraian', required: true, full:
 const progFields = p => { const kor = is('koordinator'); return [{ name: 'nama', label: 'Nama program', required: true, full: true, value: p?.nama }, { name: 'jenis', label: 'Jenis program', type: 'select', options: kor ? [['bidang', 'Program per bidang']] : [['strategis', 'Program strategis'], ['tahunan', 'Program tahunan'], ['bidang', 'Program per bidang']], value: p?.jenis || ui.progTab }, { name: 'bidangId', label: 'Bidang (untuk program bidang)', type: 'select', options: kor ? [[me().bidangId, bidang(me().bidangId)]] : optBidang('—'), value: p?.bidangId }, { name: 'sasaran', label: 'Sasaran / target', full: true, value: p?.sasaran }, { name: 'deskripsi', label: 'Deskripsi', type: 'textarea', value: p?.deskripsi }]; };
 const progSave = (p, v) => { if (v.jenis === 'bidang' && !v.bidangId) return 'Pilih bidang untuk program per bidang.'; Object.assign(p, v, { tahun: v.jenis === 'strategis' ? '' : (p.tahun || ui.tahun), bidangId: v.jenis === 'bidang' ? v.bidangId : '' }); ui.progTab = v.jenis; };
 const agFields = a => [{ name: 'judul', label: 'Judul agenda', required: true, full: true, value: a?.judul }, { name: 'jenis', label: 'Jenis', type: 'select', options: ['Rapat', 'Pelatihan', 'Kegiatan'].map(x => [x, x]), value: a?.jenis }, { name: 'bidangId', label: 'Bidang', type: 'select', options: optBidang('Semua / pengurus inti'), value: a?.bidangId }, { name: 'tanggal', label: 'Tanggal', type: 'date', required: true, value: a?.tanggal || today() }, { name: 'waktu', label: 'Waktu', type: 'time', value: a?.waktu }, { name: 'tempat', label: 'Tempat', full: true, value: a?.tempat }];
-const userFields = (u, baru) => [{ name: 'nama', label: 'Nama', required: true, value: u?.nama }, ...(baru ? [{ name: 'email', label: 'Email', type: 'email', value: '' }] : []), { name: 'role', label: 'Peran', type: 'select', options: Object.entries(ROLE), value: u?.role || 'koordinator' }, { name: 'bidangId', label: 'Bidang (koordinator)', type: 'select', options: optBidang('—'), value: u?.bidangId }, { name: 'aktif', label: 'Status', type: 'select', options: [['1', 'Aktif'], ['0', 'Nonaktif / menunggu']], value: u ? (u.aktif ? '1' : '0') : '1' }];
-const userSave = (u, v) => { if (v.role === 'koordinator' && !v.bidangId) return 'Koordinator harus memiliki bidang.'; Object.assign(u, v, { aktif: v.aktif === '1', bidangId: v.role === 'koordinator' ? v.bidangId : '' }); };
+const userFields = (u, baru) => [{ name: 'nama', label: 'Nama', required: true, value: u?.nama }, ...(baru ? [{ name: 'email', label: 'Email', type: 'email', value: '' }] : []), { name: 'role', label: 'Peran', type: 'select', options: Object.entries(ROLE), value: u?.role || 'koordinator' }, { name: 'bidangId', label: 'Bidang (ketua bidang)', type: 'select', options: optBidang('—'), value: u?.bidangId }, { name: 'aktif', label: 'Status', type: 'select', options: [['1', 'Aktif'], ['0', 'Nonaktif / menunggu']], value: u ? (u.aktif ? '1' : '0') : '1' }];
+const userSave = (u, v) => { if (v.role === 'koordinator' && !v.bidangId) return 'Ketua bidang harus memiliki bidang.'; Object.assign(u, v, { aktif: v.aktif === '1', bidangId: v.role === 'koordinator' ? v.bidangId : '' }); };
 
 async function readFile(file) {
   const asUrl = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
@@ -497,7 +497,7 @@ const A = {
   buatProfil: async () => { try { await S.ensureProfile(st.email.split('@')[0]); } catch (e) { toast(fbErr(e), true); } }
 };
 function strukForm(s) {
-  form(s ? 'Ubah jabatan' : 'Jabatan baru', [{ name: 'jabatan', label: 'Jabatan', required: true, value: s?.jabatan }, { name: 'nama', label: 'Nama pejabat', required: true, value: s?.nama }, { name: 'level', label: 'Tingkat', type: 'select', options: [[1, 'Pimpinan'], [2, 'Pengurus inti'], [3, 'Koordinator bidang']], value: s?.level || 3 }], v => { v.level = Number(v.level); if (s) Object.assign(s, v); else (db.org.struktur = db.org.struktur || []).push({ id: uid(), ...v }); });
+  form(s ? 'Ubah jabatan' : 'Jabatan baru', [{ name: 'jabatan', label: 'Jabatan', required: true, value: s?.jabatan }, { name: 'nama', label: 'Nama pejabat', required: true, value: s?.nama }, { name: 'level', label: 'Tingkat', type: 'select', options: [[1, 'Pimpinan'], [2, 'Pengurus inti'], [3, 'Ketua bidang']], value: s?.level || 3 }], v => { v.level = Number(v.level); if (s) Object.assign(s, v); else (db.org.struktur = db.org.struktur || []).push({ id: uid(), ...v }); });
 }
 const C = {
   tahun: el => { ui.tahun = el.value; ui.cal.y = Number(el.value); try { localStorage.setItem('pmik-tahun', el.value); } catch (e) { /* abaikan */ } render(); },
@@ -519,12 +519,21 @@ function vPending() {
   const p = st.profile;
   return `<div class="center"><div class="card login" style="text-align:center"><img src="assets/logo.png" alt=""><h2>${p ? 'Menunggu aktivasi' : 'Profil belum dibuat'}</h2><p class="muted">${p ? `Akun <b>${esc(st.email)}</b> sudah terdaftar. Admin perlu mengaktifkan akun dan menetapkan peran Anda sebelum dapat digunakan.` : `Akun <b>${esc(st.email)}</b> belum memiliki profil pengguna.`}</p><div class="btns" style="justify-content:center">${p ? '' : `<button class="btn primary" data-act="buatProfil">Buat profil</button>`}<button class="btn" data-act="logout">Keluar</button></div></div></div>`;
 }
+let migrated = false;
+function migrasiBidang() {
+  if (migrated || st.mode !== 'firebase' || !is('admin')) return;
+  migrated = true; let ubah = false;
+  S.BIDANG_LAMA.forEach((lama, i) => { const b = db.bidang.find(x => x.id === 'b' + (i + 1)); if (b && b.nama === lama) { b.nama = S.BIDANG_DEFAULT[i]; ubah = true; } });
+  if (ubah && !(db.org.struktur || []).length) db.org.struktur = S.strukturBidang();
+  if (ubah) S.commit();
+}
 function render() {
   const app = $('#app');
   if (!st.ready) { app.innerHTML = `<div class="center"><p class="muted">Memuat…</p></div>`; return; }
   if (!st.authed) { app.innerHTML = vAuth(); bindAuth(); return; }
   if (st.mode === 'firebase' && !(st.profile && st.profile.aktif)) { app.innerHTML = vPending(); return; }
   if (!st.loaded) { app.innerHTML = `<div class="center"><p class="muted">Memuat data…</p></div>`; return; }
+  migrasiBidang();
   const [, route = 'dashboard', arg] = location.hash.split('/'), u = me();
   const nq = K().filter(k => (k.status === 'diajukan' && is('admin', 'sekretaris')) || (k.status === 'diverifikasi' && is('admin', 'ketua'))).length;
   const years = [...new Set([String(new Date().getFullYear()), String(new Date().getFullYear() + 1), ui.tahun, ...db.kegiatan.map(k => (k.mulai || '').slice(0, 4))])].filter(Boolean).sort();

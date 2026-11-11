@@ -63,13 +63,13 @@ Setiap `git push` berikutnya otomatis ter-deploy.
 
 1. Buka situs → tab **Daftar**. **Pendaftar pertama otomatis menjadi Admin** (segera daftar setelah deploy).
 2. Pengurus lain mendaftar sendiri lewat tab **Daftar**; akun mereka berstatus *menunggu aktivasi*.
-3. Admin membuka **Manajemen Pengguna** → **Ubah** → tetapkan peran (ketua, sekretaris, bendahara, koordinator bidang),
+3. Admin membuka **Manajemen Pengguna** → **Ubah** → tetapkan peran (ketua kolegium, sekretaris, bendahara, ketua bidang),
    bidang, dan status **Aktif**.
 4. Lengkapi **Profil Organisasi** (visi, misi, periode, struktur) dan daftar **Bidang**.
 
 ## Hak akses
 
-| Wewenang | Admin | Ketua | Sekretaris | Bendahara | Koordinator |
+| Wewenang | Admin | Ketua Kolegium | Sekretaris | Bendahara | Ketua Bidang |
 |---|---|---|---|---|---|
 | Kelola pengguna dan bidang | ✓ | | | | |
 | Sunting profil organisasi | ✓ | | ✓ | | |

@@ -8,7 +8,7 @@ export const state = {
   ready: false, authed: false, loaded: false, uid: null, email: '', profile: null
 };
 
-const LS = 'pmik-proker-demo-v1';
+const LS = 'pmik-proker-demo-v2';
 let notify = () => {}, onErr = () => {};
 let fb = null, cache = {}, unsubs = [], subscribed = false, got = new Set();
 
@@ -22,10 +22,13 @@ export function orgDefault() {
     namaEn: 'Indonesian College of Medical Records and Health Information',
     alamat: 'Jl Hang Jebat III Blok F3, Kebayoran Baru, Jakarta Selatan 12120',
     email: 'kolegium-pmik@kki.go.id', telepon: '+62 812-2028-6333',
-    periode: '', visi: '', misi: '', adart: '', batasPengajuan: '', struktur: []
+    periode: '', visi: '', misi: '', adart: '', batasPengajuan: '', struktur: strukturBidang()
   };
 }
-const BIDANG_DEFAULT = ['Pendidikan dan Kurikulum', 'Uji Kompetensi', 'Pengembangan Profesi Berkelanjutan', 'Penelitian dan Publikasi', 'Kerja Sama dan Humas'];
+export const BIDANG_DEFAULT = ['Evaluasi dan Ujian', 'Kurikulum', 'Pengembangan Kompetensi', 'Mutu dan Akreditasi', 'Keanggotaan dan Kerja Sama'];
+export const BIDANG_LAMA = ['Pendidikan dan Kurikulum', 'Uji Kompetensi', 'Pengembangan Profesi Berkelanjutan', 'Penelitian dan Publikasi', 'Kerja Sama dan Humas'];
+export const KETUA_BIDANG = ['Ari Sukawan', 'Deasy Rosmala Dewi', 'Welly Satria Dewi', 'Laela Indawati', 'Aras Rasyid'];
+export const strukturBidang = () => BIDANG_DEFAULT.map((b, i) => ({ id: 'sb' + (i + 1), jabatan: `Ketua Bidang ${i + 1} — ${b}`, nama: KETUA_BIDANG[i], level: 3 }));
 
 /* ---------- data contoh untuk mode demo ---------- */
 function seedDemo() {
@@ -37,7 +40,7 @@ function seedDemo() {
     { id: 'u2', nama: 'Ketua Kolegium', email: 'ketua@contoh.id', role: 'ketua', bidangId: '', aktif: true },
     { id: 'u3', nama: 'Sekretaris', email: 'sekretaris@contoh.id', role: 'sekretaris', bidangId: '', aktif: true },
     { id: 'u4', nama: 'Bendahara', email: 'bendahara@contoh.id', role: 'bendahara', bidangId: '', aktif: true },
-    ...bidang.map((b, i) => ({ id: 'u' + (i + 5), nama: 'Koordinator ' + b.nama, email: `bidang${i + 1}@contoh.id`, role: 'koordinator', bidangId: b.id, aktif: true }))
+    ...bidang.map((b, i) => ({ id: 'u' + (i + 5), nama: KETUA_BIDANG[i], email: `bidang${i + 1}@contoh.id`, role: 'koordinator', bidangId: b.id, aktif: true }))
   ];
   const program = [
     { id: 'p1', jenis: 'strategis', nama: 'Penguatan standar pendidikan PMIK', deskripsi: 'Standar pendidikan dan kurikulum yang mutakhir dan selaras kebutuhan layanan.', sasaran: 'Standar pendidikan termutakhir', tahun: '', bidangId: '' },
@@ -46,7 +49,7 @@ function seedDemo() {
     { id: 'p4', jenis: 'tahunan', nama: 'Pemutakhiran standar dan kurikulum ' + y, deskripsi: '', sasaran: 'Dokumen standar disahkan', tahun: String(y), bidangId: '' },
     { id: 'p5', jenis: 'tahunan', nama: 'Penyelenggaraan uji kompetensi ' + y, deskripsi: '', sasaran: '2 periode uji', tahun: String(y), bidangId: '' },
     { id: 'p6', jenis: 'bidang', nama: 'Pelatihan dan seminar profesi', deskripsi: '', sasaran: '3 pelatihan', tahun: String(y), bidangId: 'b3' },
-    { id: 'p7', jenis: 'bidang', nama: 'Publikasi ilmiah', deskripsi: '', sasaran: '1 jurnal terbit', tahun: String(y), bidangId: 'b4' },
+    { id: 'p7', jenis: 'bidang', nama: 'Penjaminan mutu dan akreditasi', deskripsi: '', sasaran: '5 program studi didampingi', tahun: String(y), bidangId: 'b4' },
     { id: 'p8', jenis: 'bidang', nama: 'Kemitraan dan komunikasi publik', deskripsi: '', sasaran: '3 MoU', tahun: String(y), bidangId: 'b5' }
   ];
   const mk = (id, nama, bidangId, programId, jenis, m1, d1, m2, d2, status, progres, ind, rab, real, kendala) => ({
@@ -60,15 +63,15 @@ function seedDemo() {
     riwayat: [{ tanggal: d(1, 5), oleh: 'Data contoh', aksi: 'Dibuat', catatan: '' }]
   });
   const kegiatan = [
-    mk('k1', 'Lokakarya revisi standar kurikulum', 'b1', 'p4', 'Kegiatan', 2, 10, 3, 20, 'selesai', 100, [['Draf standar tersusun', 1, 'dokumen', 1], ['Peserta lokakarya', 40, 'orang', 38]], [['Paket rapat', 2, 'hari', 15000000, 'Iuran'], ['Honor narasumber', 4, 'orang', 2500000, 'Iuran']], [[d(3, 22), 'Paket rapat dan honor', 38500000]]),
-    mk('k2', 'Uji kompetensi periode I', 'b2', 'p5', 'Kegiatan', 4, 15, 5, 30, 'selesai', 100, [['Peserta uji', 500, 'orang', 540], ['Tingkat kelulusan', 80, '%', 76]], [['Penyusunan soal', 1, 'paket', 30000000, 'Biaya uji'], ['Pelaksanaan uji', 1, 'paket', 60000000, 'Biaya uji']], [[d(5, 31), 'Pelaksanaan periode I', 86000000]]),
+    mk('k1', 'Lokakarya revisi standar kurikulum', 'b2', 'p4', 'Kegiatan', 2, 10, 3, 20, 'selesai', 100, [['Draf standar tersusun', 1, 'dokumen', 1], ['Peserta lokakarya', 40, 'orang', 38]], [['Paket rapat', 2, 'hari', 15000000, 'Iuran'], ['Honor narasumber', 4, 'orang', 2500000, 'Iuran']], [[d(3, 22), 'Paket rapat dan honor', 38500000]]),
+    mk('k2', 'Uji kompetensi periode I', 'b1', 'p5', 'Kegiatan', 4, 15, 5, 30, 'selesai', 100, [['Peserta uji', 500, 'orang', 540], ['Tingkat kelulusan', 80, '%', 76]], [['Penyusunan soal', 1, 'paket', 30000000, 'Biaya uji'], ['Pelaksanaan uji', 1, 'paket', 60000000, 'Biaya uji']], [[d(5, 31), 'Pelaksanaan periode I', 86000000]]),
     mk('k3', 'Pelatihan klasifikasi dan kodefikasi penyakit', 'b3', 'p6', 'Pelatihan', 7, 5, 7, 8, 'selesai', 100, [['Peserta pelatihan', 100, 'orang', 112], ['Kepuasan peserta', 85, '%', 88]], [['Paket pelatihan', 1, 'paket', 45000000, 'Sponsor']], [[d(7, 10), 'Pelatihan', 42750000]]),
-    mk('k4', 'Uji kompetensi periode II', 'b2', 'p5', 'Kegiatan', 10, 1, 12, 15, 'berjalan', 60, [['Peserta uji', 500, 'orang', 310], ['Tingkat kelulusan', 80, '%', 0]], [['Penyusunan soal', 1, 'paket', 30000000, 'Biaya uji'], ['Pelaksanaan uji', 1, 'paket', 60000000, 'Biaya uji']], [[d(10, 20), 'Penyusunan soal', 28000000]], [[d(11, 2), 'Jumlah penguji di wilayah timur belum mencukupi', '', 'terbuka']]),
-    mk('k5', 'Penerbitan jurnal ilmiah PMIK', 'b4', 'p7', 'Kegiatan', 3, 1, 12, 20, 'berjalan', 45, [['Artikel terbit', 12, 'artikel', 5]], [['Biaya penerbitan', 2, 'edisi', 12000000, 'Iuran']], [[d(6, 30), 'Edisi 1', 11500000]], [[d(9, 15), 'Naskah masuk lebih sedikit dari target', 'Perpanjang masa penerimaan naskah', 'ditangani']]),
+    mk('k4', 'Uji kompetensi periode II', 'b1', 'p5', 'Kegiatan', 10, 1, 12, 15, 'berjalan', 60, [['Peserta uji', 500, 'orang', 310], ['Tingkat kelulusan', 80, '%', 0]], [['Penyusunan soal', 1, 'paket', 30000000, 'Biaya uji'], ['Pelaksanaan uji', 1, 'paket', 60000000, 'Biaya uji']], [[d(10, 20), 'Penyusunan soal', 28000000]], [[d(11, 2), 'Jumlah penguji di wilayah timur belum mencukupi', '', 'terbuka']]),
+    mk('k5', 'Pendampingan akreditasi program studi', 'b4', 'p7', 'Kegiatan', 3, 1, 12, 20, 'berjalan', 45, [['Program studi didampingi', 12, 'prodi', 5]], [['Visitasi pendampingan', 2, 'tahap', 12000000, 'Iuran']], [[d(6, 30), 'Tahap 1', 11500000]], [[d(9, 15), 'Jadwal visitasi beberapa prodi mundur', 'Jadwal ulang pada tahap 2', 'ditangani']]),
     mk('k6', 'Penandatanganan kerja sama institusi pendidikan', 'b5', 'p8', 'Kegiatan', 12, 5, 12, 6, 'disetujui', 0, [['MoU ditandatangani', 3, 'dokumen', 0]], [['Rapat dan seremoni', 1, 'paket', 18000000, 'Iuran']], []),
     mk('k7', 'Seminar nasional rekam medis elektronik', 'b3', 'p6', 'Pelatihan', 12, 12, 12, 13, 'diverifikasi', 0, [['Peserta seminar', 300, 'orang', 0]], [['Paket seminar', 1, 'paket', 75000000, 'Sponsor']], []),
-    mk('k8', 'Rapat kerja evaluasi akhir tahun', 'b1', 'p4', 'Rapat', 12, 18, 12, 19, 'diajukan', 0, [['Laporan evaluasi', 1, 'dokumen', 0]], [['Paket rapat', 2, 'hari', 12000000, 'Iuran']], []),
-    mk('k9', 'Hibah penelitian PMIK', 'b4', 'p7', 'Kegiatan', 12, 1, 12, 28, 'draft', 0, [['Proposal didanai', 5, 'proposal', 0]], [['Dana hibah', 5, 'proposal', 10000000, 'Hibah']], [])
+    mk('k8', 'Rapat kerja evaluasi akhir tahun', 'b2', 'p4', 'Rapat', 12, 18, 12, 19, 'diajukan', 0, [['Laporan evaluasi', 1, 'dokumen', 0]], [['Paket rapat', 2, 'hari', 12000000, 'Iuran']], []),
+    mk('k9', 'Audit mutu internal pendidikan', 'b4', 'p7', 'Kegiatan', 12, 1, 12, 28, 'draft', 0, [['Laporan audit', 5, 'laporan', 0]], [['Tim audit', 5, 'kunjungan', 10000000, 'Iuran']], [])
   ];
   const agenda = [
     { id: 'a1', judul: 'Rapat pleno pengurus', jenis: 'Rapat', tanggal: d(12, 3), waktu: '09:00', tempat: 'Sekretariat', bidangId: '' },
@@ -83,7 +86,7 @@ function seedDemo() {
     struktur: [
       { id: 's1', jabatan: 'Ketua', nama: '(isi nama)', level: 1 }, { id: 's2', jabatan: 'Sekretaris', nama: '(isi nama)', level: 2 },
       { id: 's3', jabatan: 'Bendahara', nama: '(isi nama)', level: 2 },
-      ...bidang.map((b, i) => ({ id: 's' + (i + 4), jabatan: 'Koordinator Bidang ' + b.nama, nama: '(isi nama)', level: 3 }))
+      ...strukturBidang()
     ]
   };
   return { org, users, bidang, program, kegiatan, agenda, dokumen: [] };
