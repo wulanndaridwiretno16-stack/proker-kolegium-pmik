@@ -568,7 +568,7 @@ function vAuth() {
       <label class="f">Kata sandi${inp('lock', `<input name="pw" type="password" required minlength="6" autocomplete="${daftar ? 'new-password' : 'current-password'}" placeholder="Minimal 6 karakter"><button type="button" class="eye" data-act="lihatSandi" aria-label="Tampilkan kata sandi">${ico('eye')}</button>`)}</label>
       ${daftar ? `<label class="f">Ulangi kata sandi${inp('lock', '<input name="pw2" type="password" required minlength="6" autocomplete="new-password" placeholder="Ketik ulang kata sandi">')}</label>` : ''}
       ${ui.authErr ? `<div class="err" style="margin:0">${esc(ui.authErr)}</div>` : ''}<button class="btn primary big">${daftar ? 'Daftar' : 'Masuk'}</button>
-      ${daftar ? `<p class="small muted" style="margin:0;text-align:center">Pendaftar pertama menjadi Admin. Pendaftar berikutnya menunggu aktivasi oleh Admin.</p>` : `<button type="button" class="link" data-act="lupa">${ico('key')} Lupa kata sandi?</button>`}</form>
+      ${daftar ? '' : `<button type="button" class="link" data-act="lupa">${ico('key')} Lupa kata sandi?</button>`}</form>
     <p class="small muted foot">${esc('Jl Hang Jebat III Blok F3, Kebayoran Baru, Jakarta Selatan 12120')}</p></div></section></div>`;
 }
 function vPending() {
