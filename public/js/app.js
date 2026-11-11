@@ -547,7 +547,7 @@ function strukForm(s) {
   form(s ? 'Ubah jabatan' : 'Jabatan baru', [{ name: 'jabatan', label: 'Jabatan', required: true, value: s?.jabatan }, { name: 'nama', label: 'Nama pejabat', required: true, value: s?.nama }, { name: 'level', label: 'Tingkat', type: 'select', options: [[1, 'Pimpinan'], [2, 'Pengurus inti'], [3, 'Ketua bidang']], value: s?.level || 3 }], v => { v.level = Number(v.level); if (s) Object.assign(s, v); else (db.org.struktur = db.org.struktur || []).push({ id: uid(), ...v }); });
 }
 const C = {
-  tahun: el => { if (el.value === '+') { render(); return A.tahunAdd(); } setTahun(el.value); render(); },
+  tahun: el => { if (el.value === '+') { el.value = ui.tahun; return A.tahunAdd(); } setTahun(el.value); render(); },
   lapJenis: el => { ui.lap = { jenis: el.value, idx: 0 }; render(); }, lapIdx: el => { ui.lap.idx = Number(el.value); render(); },
   docKat: el => { ui.docKat = el.value; render(); }, monBidang: el => { ui.monBidang = el.value; render(); },
   userSwitch: el => S.switchUser(el.value)
@@ -591,29 +591,46 @@ function migrasiBidang() {
   if (!st0.some(x => /^ketua(?! bidang)/i.test(x.jabatan))) { st0.unshift(S.strukturKetua()); ubah = true; }
   if (ubah) S.commit();
 }
+const loader = t => `<div class="center"><div class="loader"><img src="assets/icon.png" alt=""><span class="spin"></span><p class="muted">${t}</p></div></div>`;
+// Hanya bagian yang isinya berubah yang ditulis ulang, supaya tampilan tidak berkedip.
+const put = (el, html) => { if (el.__html !== html) { el.innerHTML = html; el.__html = html; return true; } return false; };
+let lastScreen = '', lastRoute = null;
+function screen(name, html, after) {
+  const app = $('#app');
+  if (lastScreen !== name) { app.__html = null; lastRoute = null; }
+  app.classList.toggle('noanim', lastScreen === name);
+  if (put(app, html) && lastScreen !== name) { app.classList.remove('fade'); void app.offsetWidth; app.classList.add('fade'); }
+  lastScreen = name; if (after) after();
+}
 function render() {
   const app = $('#app');
-  if (!st.ready) { app.innerHTML = `<div class="center"><p class="muted">Memuat…</p></div>`; return; }
-  if (!st.authed) { app.innerHTML = vAuth(); bindAuth(); return; }
-  if (st.mode === 'firebase' && !(st.profile && st.profile.aktif)) { app.innerHTML = vPending(); return; }
-  if (!st.loaded) { app.innerHTML = `<div class="center"><p class="muted">Memuat data…</p></div>`; return; }
+  if (!st.ready) return screen('load', loader('Memuat…'));
+  if (!st.authed) return screen('auth', vAuth(), bindAuth);
+  if (st.mode === 'firebase' && !(st.profile && st.profile.aktif)) return screen('pending', vPending());
+  if (!st.loaded) return screen('load', loader('Memuat data…'));
   migrasiBidang();
   const [, route = 'dashboard', arg] = location.hash.split('/'), u = me();
   const nq = K().filter(k => (k.status === 'diajukan' && is('admin', 'sekretaris')) || (k.status === 'diverifikasi' && is('admin', 'ketua'))).length;
   const years = daftarTahun();
   const cur = route === 'kegiatan' ? 'pengajuan' : route;
-  const y = window.scrollY, same = app.dataset.route === location.hash;
-  app.dataset.route = location.hash;
-  app.innerHTML = `<div class="shell"><aside class="side"><div class="brand"><img src="assets/logo.png" alt="Kolegium Perekam Medis dan Informasi Kesehatan"></div><div class="app-name">Sistem Informasi Program Kerja</div>
-    <nav class="nav">${MENU.map(([k, l, i, d]) => `<a href="#/${k}" class="${cur === k ? 'on' : ''}" title="${d}">${ico(i)}<span>${l}</span>${k === 'persetujuan' && nq ? `<span class="badge">${nq}</span>` : ''}</a>`).join('')}</nav>
-    <div class="foot">${esc(db.org.alamat || '')}<br>${esc(db.org.email || '')}</div></aside>
-  <div class="main">${st.mode === 'demo' ? `<div class="demo"><b>Mode demo</b> — data contoh, tersimpan di browser ini saja. Isi <code>public/js/firebase-config.js</code> untuk memakai Firebase (lihat README).</div>` : ''}
-    <header class="top"><button class="btn menu-btn" data-act="menu" aria-label="Menu">${ico('menu')}</button>
-      <label class="small muted">Tahun <select data-change="tahun">${years.map(t => `<option ${t === ui.tahun ? 'selected' : ''}>${t}</option>`).join('')}<option value="+">${ico('plus')} Tambah tahun…</option></select></label><div class="sp"></div>
-      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="gantiSandi">${ico('key')} Ubah kata sandi</button><button class="btn sm" data-act="logout">${ico('out')} Keluar</button>`}
-    </header><main class="page">${route === 'kegiatan' ? vKegiatan(arg) : (V[route] || V.dashboard)()}</main></div></div>`;
-  window.scrollTo(0, same ? y : 0);
+  if (lastScreen !== 'app') {
+    app.__html = null; lastScreen = 'app'; lastRoute = null; app.classList.remove('noanim');
+    app.innerHTML = `<div class="shell"><div class="scrim" data-act="menu"></div><aside class="side"><div class="brand"><img src="assets/logo.png" alt="Kolegium Perekam Medis dan Informasi Kesehatan"></div><div class="app-name">Sistem Informasi Program Kerja</div><nav class="nav"></nav><div class="foot"></div></aside>
+      <div class="main">${st.mode === 'demo' ? `<div class="demo"><b>Mode demo</b> — data contoh, tersimpan di browser ini saja. Isi <code>public/js/firebase-config.js</code> untuk memakai Firebase (lihat README).</div>` : ''}<header class="top"></header><main class="page"></main></div></div>`;
+    app.classList.remove('fade'); void app.offsetWidth; app.classList.add('fade');
+  }
+  put($('.nav'), MENU.map(([k, l, i, d]) => `<a href="#/${k}" class="${cur === k ? 'on' : ''}" title="${d}">${ico(i)}<span>${l}</span>${k === 'persetujuan' && nq ? `<span class="badge">${nq}</span>` : ''}</a>`).join(''));
+  put($('.side .foot'), `${esc(db.org.alamat || '')}<br>${esc(db.org.email || '')}`);
+  put($('.top'), `<button class="btn menu-btn" data-act="menu" aria-label="Menu">${ico('menu')}</button>
+      <label class="small muted">Tahun <select data-change="tahun">${years.map(t => `<option ${t === ui.tahun ? 'selected' : ''}>${t}</option>`).join('')}<option value="+">+ Tambah tahun…</option></select></label><div class="sp"></div>
+      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="gantiSandi">${ico('key')} Ubah kata sandi</button><button class="btn sm" data-act="logout">${ico('out')} Keluar</button>`}`);
+  const pg = $('.page'), baru = lastRoute !== location.hash;
+  put(pg, route === 'kegiatan' ? vKegiatan(arg) : (V[route] || V.dashboard)());
+  if (baru) { lastRoute = location.hash; pg.classList.remove('enter'); void pg.offsetWidth; pg.classList.add('enter'); clearTimeout(pg.__t); pg.__t = setTimeout(() => pg.classList.remove('enter'), 1100); window.scrollTo({ top: 0, behavior: 'instant' }); $('.side').classList.remove('open'); }
 }
+// Beberapa pembaruan data yang datang beruntun digabung menjadi satu kali gambar ulang.
+let tunda = 0;
+const renderNanti = () => { if (tunda) return; tunda = requestAnimationFrame(() => { tunda = 0; if (!$('#dlg').open) render(); }); };
 function bindAuth() {
   const f = $('#auth'); if (!f) return;
   f.onsubmit = async e => {
@@ -629,4 +646,5 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => { const n = e.target.dataset && e.target.dataset.change; if (n && C[n]) C[n](e.target); });
 window.addEventListener('hashchange', render);
-S.init(() => { if (!$('#dlg').open) render(); }, e => toast(fbErr(e), true)).catch(e => { $('#app').innerHTML = `<div class="center"><div class="card"><b>Gagal memuat Firebase.</b><p class="muted">${esc(fbErr(e))}</p></div></div>`; });
+$('#dlg').addEventListener('close', () => { if (lastScreen === 'app') renderNanti(); });
+S.init(renderNanti, e => toast(fbErr(e), true)).catch(e => { $('#app').innerHTML = `<div class="center"><div class="card"><b>Gagal memuat Firebase.</b><p class="muted">${esc(fbErr(e))}</p></div></div>`; });

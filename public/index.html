@@ -6,10 +6,14 @@
 <title>Program Kerja — Kolegium PMIK</title>
 <link rel="icon" href="assets/icon.png">
 <link rel="stylesheet" href="css/style.css">
+<link rel="modulepreload" href="js/app.js">
+<link rel="modulepreload" href="js/store.js">
+<link rel="modulepreload" href="js/firebase-config.js">
+<link rel="preload" as="image" href="assets/logo.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 </head>
 <body>
-<div id="app"><div class="center"><p class="muted">Memuat aplikasi…</p></div></div>
+<div id="app"><div class="center"><div class="loader"><img src="assets/icon.png" alt=""><span class="spin"></span><p class="muted">Memuat aplikasi…</p></div></div></div>
 <dialog id="dlg"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="print"></div>

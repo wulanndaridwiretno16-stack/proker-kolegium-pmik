@@ -190,7 +190,48 @@ textarea{min-height:80px;resize:vertical}
 .pane .foot{margin:22px 0 0;text-align:center}
 .authbg{background:linear-gradient(145deg,#132a55,#1f4391 55%,#2a6fc4)}
 
+/* gerak halus */
+html{scroll-behavior:smooth}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes draw{from{stroke-dasharray:0 999}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+#app.fade{animation:fadeIn .28s ease both}
+.page.enter>*{animation:rise .34s cubic-bezier(.2,.7,.2,1) both}
+.page.enter>*:nth-child(2){animation-delay:.04s}.page.enter>*:nth-child(3){animation-delay:.08s}.page.enter>*:nth-child(4){animation-delay:.12s}.page.enter>*:nth-child(n+5){animation-delay:.16s}
+.page.enter .bar i{transform-origin:left;animation:grow .7s .15s cubic-bezier(.2,.7,.2,1) both}
+.page.enter .donut circle+circle{animation:draw .9s .15s ease-out both}
+.bar i{transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.btn,.nav a,.tabs button,.seg button,.chip,.card,.link,.inp .eye,input,select,textarea,.cal .ev,.checks .opts label{transition:background-color .16s ease,color .16s ease,border-color .16s ease,box-shadow .2s ease,transform .16s ease,filter .16s ease}
+.btn:active{transform:scale(.97)}
+.btn.primary:hover,.btn.ok:hover{box-shadow:0 4px 12px rgba(31,67,145,.22)}
+.nav a:hover{transform:translateX(2px)}.nav a.on:hover{transform:none}
+.tile:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(23,51,95,.06),0 10px 24px rgba(23,51,95,.10)}
+tbody tr{transition:background-color .14s ease}tbody tr:hover{background:#f8fafd}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,155,240,.18);outline:0}
+dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1)}
+dialog[open]::backdrop{animation:fadeIn .2s ease}
+#toast div{animation:toastIn .24s cubic-bezier(.2,.7,.2,1)}
+.loader{display:flex;flex-direction:column;align-items:center;gap:14px}
+.loader img{width:54px;height:auto}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--gray-l);border-top-color:var(--navy);animation:spin .8s linear infinite}
+.hero-in>*{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}.hero-in>*:nth-child(2){animation-delay:.06s}.hero-in>*:nth-child(3){animation-delay:.12s}.hero-in>*:nth-child(4){animation-delay:.18s}
+.pane-in{animation:rise .5s .1s cubic-bezier(.2,.7,.2,1) both}
+.leaf.l1{animation:floaty 9s ease-in-out infinite}.leaf.l2{animation:floaty 11s ease-in-out infinite reverse}
+.feat li{transition:background-color .2s ease,transform .2s ease}.feat li:hover{background:rgba(255,255,255,.16);transform:translateY(-2px)}
+.side{transition:left .26s cubic-bezier(.2,.7,.2,1)}
+.noanim .hero-in>*,.noanim .pane-in{animation:none}
+.scrim{display:none}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
 @media (max-width:900px){
+  .scrim{display:block;position:fixed;inset:0;z-index:15;background:rgba(15,28,54,.45);opacity:0;pointer-events:none;transition:opacity .26s ease}
+  .shell:has(.side.open) .scrim{opacity:1;pointer-events:auto}
   .auth{grid-template-columns:1fr}
   .hero{padding:28px 20px}.hero h1{font-size:28px}.hero .lead{margin-bottom:16px;font-size:14px}
   .feat{grid-template-columns:1fr 1fr;gap:8px}.feat li{padding:9px}.feat span{display:none}
