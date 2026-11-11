@@ -30,7 +30,12 @@ const ICON = {
   check: 'M12 3a9 9 0 100 18 9 9 0 000-18zM8 12l3 3 5-6', cal: 'M4 5h16v16H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4',
   wallet: 'M3 7h16a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 7l12-3v3M16 13h2', mon: 'M4 4h16v16H4zM7 14l3-3 3 2 4-5',
   eval: 'M4 20V10M9 20V6M14 20v-8M19 20V4M3 20h18', rep: 'M6 3h12v18H6zM9 8h6M9 12h6M9 16h3', doc: 'M3 7V5h7l2 2h9v12H3z',
-  users: 'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 11a3 3 0 100-6M18 15c2 .5 3 2.5 3 5', menu: 'M4 6h16M4 12h16M4 18h16'
+  users: 'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 3-5 6-5s6 2 6 5M17 11a3 3 0 100-6M18 15c2 .5 3 2.5 3 5', menu: 'M4 6h16M4 12h16M4 18h16',
+  plus: 'M12 5v14M5 12h14', download: 'M12 4v11M7 11l5 5 5-5M5 20h14', print: 'M7 8V4h10v4M7 17H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-2M7 14h10v6H7z',
+  lock: 'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-4 4-6 8-6s8 2 8 6',
+  eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', bell: 'M6 16v-5a6 6 0 0112 0v5l2 2H4zM10 20a2 2 0 004 0',
+  target: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 17a5 5 0 100-10 5 5 0 000 10zM12 13a1 1 0 100-2 1 1 0 000 2z', clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
+  play: 'M12 21a9 9 0 100-18 9 9 0 000 18zM10 8l6 4-6 4z', key: 'M7.5 16a4 4 0 100-8 4 4 0 000 8zM11.5 12H21M17.5 12v3M21 12v2.5', out: 'M10 4H5v16h5M14 8l4 4-4 4M18 12H9'
 };
 const ico = n => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 const MENU = [
@@ -152,7 +157,8 @@ const optBidang = (kosong) => [...(kosong ? [['', kosong]] : []), ...db.bidang.m
 
 /* ================= views ================= */
 const V = {};
-const head = (t, sub, right = '') => `<div class="phead"><div><h1>${esc(t)}</h1><p>${esc(sub)}</p></div><div class="sp"></div><div class="btns">${right}</div></div>`;
+const head = (t, sub, right = '') => { const m = MENU.find(x => x[1] === t); return `<div class="phead">${m ? `<span class="hico">${ico(m[2])}</span>` : ''}<div><h1>${esc(t)}</h1><p>${esc(sub)}</p></div><div class="sp"></div><div class="btns">${right}</div></div>`; };
+const tile = (ic, warna, lbl, val, sub, kecil) => `<div class="card tile"><span class="tico ${warna}">${ico(ic)}</span><div><div class="lbl">${lbl}</div><div class="val"${kecil ? ' style="font-size:19px"' : ''}>${val}</div><div class="sub">${sub}</div></div></div>`;
 const empty = t => `<div class="empty">${esc(t)}</div>`;
 const table = (heads, rows, foot = '') => rows.length ? `<div class="tw"><table><thead><tr>${heads.map(h => `<th${/^(Anggaran|Realisasi|Sisa|Jumlah|Target|Volume|Harga|Nilai|Serapan)/.test(h) ? ' class="num"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody>${foot ? `<tfoot>${foot}</tfoot>` : ''}</table></div>` : '';
 const klink = k => `<a href="#/kegiatan/${k.id}"><b>${esc(k.nama)}</b></a><div class="small muted">${esc(bidang(k.bidangId))}</div>`;
@@ -167,11 +173,11 @@ V.dashboard = () => {
   const next = [...ak.filter(k => k.selesai >= today()).map(k => ({ t: k.mulai, n: k.nama, j: k.jenis, id: k.id })), ...db.agenda.filter(a => a.tanggal >= today()).map(a => ({ t: a.tanggal, n: a.judul, j: a.jenis }))].sort((a, b) => a.t.localeCompare(b.t)).slice(0, 6);
   return head('Dashboard', is('ketua', 'admin') ? `Dashboard pimpinan — seluruh capaian organisasi tahun ${ui.tahun}` : `Ringkasan program kerja tahun ${ui.tahun}`) + `
   <div class="grid tiles">
-    <div class="card tile"><div class="lbl">Program kerja</div><div class="val">${db.program.filter(p => !p.tahun || p.tahun === ui.tahun).length}</div><div class="sub">strategis, tahunan, bidang</div></div>
-    <div class="card tile"><div class="lbl">Kegiatan diusulkan</div><div class="val">${ks.length}</div><div class="sub">${ak.length} telah disahkan</div></div>
-    <div class="card tile"><div class="lbl">Sedang berjalan</div><div class="val">${ks.filter(k => k.status === 'berjalan').length}</div><div class="sub">${ks.filter(telat).length} melewati jadwal</div></div>
-    <div class="card tile"><div class="lbl">Selesai</div><div class="val">${ks.filter(k => k.status === 'selesai').length}</div><div class="sub">dari ${ak.length} kegiatan disahkan</div></div>
-    <div class="card tile"><div class="lbl">Menunggu persetujuan</div><div class="val">${tunggu}</div><div class="sub">verifikasi / pengesahan</div></div>
+    ${tile('plan', 'navy', 'Program kerja', db.program.filter(p => !p.tahun || p.tahun === ui.tahun).length, 'strategis, tahunan, bidang')}
+    ${tile('form', 'blue', 'Kegiatan diusulkan', ks.length, `${ak.length} telah disahkan`)}
+    ${tile('play', 'cyan', 'Sedang berjalan', ks.filter(k => k.status === 'berjalan').length, `${ks.filter(telat).length} melewati jadwal`)}
+    ${tile('check', 'green', 'Selesai', ks.filter(k => k.status === 'selesai').length, `dari ${ak.length} kegiatan disahkan`)}
+    ${tile('clock', 'amber', 'Menunggu persetujuan', tunggu, 'verifikasi / pengesahan')}
   </div>
   <div class="grid g3 mt">
     <div class="card"><h3>Capaian tahunan</h3><div class="donut">
@@ -182,11 +188,11 @@ V.dashboard = () => {
   </div>
   <div class="grid g2 mt">
     <div class="card"><h3>Progres per bidang</h3><div class="rows">${perB.map(x => `<div class="rowbar"><div class="t"><span>${esc(x.b.nama)}</span><span class="muted small">${x.s}/${x.n} selesai</span></div>${bar(x.p || 0, 'g')}</div>`).join('') || empty('Belum ada bidang')}</div></div>
-    <div class="card"><div class="chead"><h3>Notifikasi</h3><span class="chip ${nt.length ? 'amber' : ''}">${nt.length}</span></div>
+    <div class="card"><div class="chead"><span class="cico">${ico('bell')}</span><h3>Notifikasi</h3><span class="chip ${nt.length ? 'amber' : ''}">${nt.length}</span></div>
       ${nt.slice(0, 8).map(n => `<div class="notif"><i class="dot ${n.lv}"></i><div>${n.id ? `<a href="#/kegiatan/${n.id}">${esc(n.tx)}</a>` : esc(n.tx)}</div></div>`).join('') || empty('Tidak ada pengingat')}
       ${nt.length > 8 ? `<div class="small muted">+${nt.length - 8} lainnya</div>` : ''}</div>
   </div>
-  <div class="card mt"><div class="chead"><h3>Agenda terdekat</h3><a class="btn sm" href="#/jadwal">Buka kalender</a></div>
+  <div class="card mt"><div class="chead"><span class="cico">${ico('cal')}</span><h3>Agenda terdekat</h3><a class="btn sm" href="#/jadwal">Buka kalender</a></div>
     ${table(['Tanggal', 'Agenda', 'Jenis'], next.map(x => `<tr><td class="nowrap">${tgl(x.t)}</td><td>${x.id ? `<a href="#/kegiatan/${x.id}">${esc(x.n)}</a>` : esc(x.n)}</td><td>${esc(x.j)}</td></tr>`)) || empty('Belum ada agenda mendatang')}</div>`;
 };
 
@@ -198,7 +204,7 @@ V.profil = () => {
     <div class="card"><h3>Visi</h3><p style="margin:0 0 12px">${esc(o.visi) || '<span class="muted">Belum diisi</span>'}</p><h3>Misi</h3>${o.misi ? `<ol style="margin:0;padding-left:20px">${o.misi.split('\n').filter(Boolean).map(m => `<li>${esc(m)}</li>`).join('')}</ol>` : '<p class="muted">Belum diisi</p>'}</div>
   </div>
   <div class="card mt"><div class="chead"><h3>AD/ART</h3><a class="btn sm" href="#/dokumen">Berkas di menu Dokumen</a></div><p style="margin:0;white-space:pre-wrap">${esc(o.adart) || '<span class="muted">Ringkasan belum diisi</span>'}</p></div>
-  <div class="card mt"><div class="chead"><h3>Struktur organisasi</h3>${ed ? `<button class="btn sm" data-act="strukAdd">+ Jabatan</button>` : ''}</div>
+  <div class="card mt"><div class="chead"><h3>Struktur organisasi</h3>${ed ? `<button class="btn sm" data-act="strukAdd">${ico('plus')} Jabatan</button>` : ''}</div>
     ${(o.struktur || []).length ? `<div class="org">${[1, 2, 3].map(n => lv(n).length ? `<div class="lvl l${n}">${lv(n).map(s => `<div class="box"><b>${esc(s.jabatan)}</b>${esc(s.nama)}${ed ? `<div class="btns" style="justify-content:center;margin-top:4px"><button class="btn sm" data-act="strukEdit" data-id="${s.id}">Ubah</button><button class="btn sm danger" data-act="strukDel" data-id="${s.id}">Hapus</button></div>` : ''}</div>`).join('')}</div>` : '').join('')}</div>` : empty('Struktur belum diisi')}</div>`;
 };
 
@@ -210,14 +216,14 @@ V.perencanaan = () => {
     return `<tr><td><b>${esc(p.nama)}</b><div class="small muted">${esc(p.deskripsi)}</div></td>${tab === 'bidang' ? `<td>${esc(bidang(p.bidangId))}</td>` : ''}<td>${esc(p.sasaran) || '–'}</td><td class="num">${ks.length}</td><td style="min-width:140px">${bar(avg(ak.map(k => k.progres || 0)) || 0)}</td>
     <td>${edit ? `<div class="btns"><button class="btn sm" data-act="progEdit" data-id="${p.id}">Ubah</button><button class="btn sm danger" data-act="progDel" data-id="${p.id}">Hapus</button></div>` : ''}</td></tr>`;
   });
-  return head('Perencanaan Program', 'Program strategis, program tahunan, dan program per bidang', `<button class="btn" data-act="progWord">Unduh Word</button><button class="btn" data-act="progPdf">Cetak / PDF</button><button class="btn" data-act="tahunAdd">+ Tahun</button>` + (can.program() ? `<button class="btn primary" data-act="progAdd">+ Program</button>` : '')) + `
+  return head('Perencanaan Program', 'Program strategis, program tahunan, dan program per bidang', `<button class="btn" data-act="progWord">${ico('download')} Unduh Word</button><button class="btn" data-act="progPdf">${ico('print')} Cetak / PDF</button><button class="btn" data-act="tahunAdd">${ico('plus')} Tahun</button>` + (can.program() ? `<button class="btn primary" data-act="progAdd">${ico('plus')} Program</button>` : '')) + `
   <div class="card"><div class="tabs">${[['strategis', 'Program strategis'], ['tahunan', `Program tahunan ${ui.tahun}`], ['bidang', `Program per bidang ${ui.tahun}`]].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-act="progTab" data-id="${k}">${l}</button>`).join('')}</div>
   ${table(['Program', ...(tab === 'bidang' ? ['Bidang'] : []), 'Sasaran', 'Kegiatan', 'Progres', ''], rows) || empty('Belum ada program pada kategori ini')}</div>`;
 };
 
 V.pengajuan = () => {
   const ks = K().filter(k => !is('koordinator') || k.bidangId === me().bidangId).sort((a, b) => a.mulai.localeCompare(b.mulai));
-  return head('Pengajuan Kegiatan', is('koordinator') ? `Usulan kegiatan ${bidang(me().bidangId)} — tahun ${ui.tahun}` : `Usulan kegiatan seluruh bidang — tahun ${ui.tahun}`, can.buat() ? `<button class="btn primary" data-act="kegAdd">+ Usulan kegiatan</button>` : '') + `
+  return head('Pengajuan Kegiatan', is('koordinator') ? `Usulan kegiatan ${bidang(me().bidangId)} — tahun ${ui.tahun}` : `Usulan kegiatan seluruh bidang — tahun ${ui.tahun}`, can.buat() ? `<button class="btn primary" data-act="kegAdd">${ico('plus')} Usulan kegiatan</button>` : '') + `
   <div class="card">${table(['Kegiatan', 'Program', 'Jadwal', 'Anggaran', 'Status', ''], ks.map(k => `<tr><td>${klink(k)}</td><td>${esc(program(k.programId))}</td><td class="nowrap">${tgl(k.mulai)} – ${tgl(k.selesai)}</td><td class="num">${rp(angg(k))}</td><td>${chip(k.status)}</td>
     <td><div class="btns"><a class="btn sm" href="#/kegiatan/${k.id}">Buka</a>${can.edit(k) ? `<button class="btn sm primary" data-act="ajukan" data-id="${k.id}">Ajukan</button>` : ''}</div></td></tr>`)) || empty('Belum ada usulan kegiatan. Buat usulan, lengkapi indikator, RAB, dan unggah KAK/proposal, lalu ajukan ke sekretariat.')}</div>
   <p class="small muted mt">Alur: Draf → Diajukan ke sekretariat → Terverifikasi → Disahkan ketua → Berjalan → Selesai dan dilaporkan.</p>`;
@@ -243,7 +249,7 @@ V.jadwal = () => {
   }
   const mm = `${y}-${pad(m + 1)}`, ag = db.agenda.filter(a => a.tanggal.startsWith(mm)).sort((a, b) => a.tanggal.localeCompare(b.tanggal));
   const lat = db.kegiatan.filter(k => k.jenis === 'Pelatihan' && AKTIF.includes(k.status) && k.mulai.slice(0, 4) === String(y));
-  return head('Jadwal Kegiatan', 'Kalender kegiatan, agenda rapat, dan jadwal pelatihan', can.agenda() ? `<button class="btn primary" data-act="agAdd">+ Agenda</button>` : '') + `
+  return head('Jadwal Kegiatan', 'Kalender kegiatan, agenda rapat, dan jadwal pelatihan', can.agenda() ? `<button class="btn primary" data-act="agAdd">${ico('plus')} Agenda</button>` : '') + `
   <div class="card"><div class="chead"><button class="btn sm" data-act="calNav" data-id="-1" aria-label="Bulan sebelumnya">‹</button><h3 style="text-align:center">${BULAN[m]} ${y}</h3><button class="btn sm" data-act="calNav" data-id="1" aria-label="Bulan berikutnya">›</button></div>
     <div class="cal">${['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map(d => `<div class="dh">${d}</div>`).join('')}${cells.join('')}</div>
     <div class="legend"><span><i style="background:var(--blue-l)"></i>Kegiatan</span><span><i style="background:var(--indigo-l)"></i>Rapat</span><span><i style="background:var(--green-l)"></i>Pelatihan</span><span>Kegiatan tampil setelah disahkan.</span></div></div>
@@ -259,16 +265,16 @@ V.anggaran = () => {
   const usul = sum(K().filter(k => ['draft', 'diajukan', 'diverifikasi', 'revisi'].includes(k.status)).map(angg));
   return head('Anggaran', `Rencana anggaran biaya, sumber dana, dan realisasi — tahun ${ui.tahun}`) + `
   <div class="grid tiles">
-    <div class="card tile"><div class="lbl">Anggaran disahkan</div><div class="val" style="font-size:20px">${rp(tot)}</div><div class="sub">${ks.length} kegiatan</div></div>
-    <div class="card tile"><div class="lbl">Realisasi</div><div class="val" style="font-size:20px">${rp(rl)}</div><div class="sub">serapan ${pct(tot ? rl / tot * 100 : 0)}</div></div>
-    <div class="card tile"><div class="lbl">Sisa anggaran</div><div class="val" style="font-size:20px">${rp(tot - rl)}</div><div class="sub">&nbsp;</div></div>
-    <div class="card tile"><div class="lbl">Masih dalam usulan</div><div class="val" style="font-size:20px">${rp(usul)}</div><div class="sub">belum disahkan</div></div>
+    ${tile('wallet', 'navy', 'Anggaran disahkan', rp(tot), `${ks.length} kegiatan`, 1)}
+    ${tile('eval', 'green', 'Realisasi', rp(rl), `serapan ${pct(tot ? rl / tot * 100 : 0)}`, 1)}
+    ${tile('target', 'blue', 'Sisa anggaran', rp(tot - rl), 'belum terpakai', 1)}
+    ${tile('clock', 'amber', 'Masih dalam usulan', rp(usul), 'belum disahkan', 1)}
   </div>
   <div class="grid g2 mt">
     <div class="card"><h3>Sumber dana</h3><div class="rows">${Object.entries(sd).sort((a, b) => b[1] - a[1]).map(([s, v]) => `<div class="rowbar"><div class="t"><span>${esc(s)}</span><span class="num">${rp(v)}</span></div><div class="bar n"><i style="width:${tot ? v / tot * 100 : 0}%"></i></div></div>`).join('') || empty('Belum ada RAB')}</div></div>
     <div class="card"><h3>Anggaran per bidang</h3>${table(['Bidang', 'Anggaran', 'Realisasi', 'Serapan'], db.bidang.map(b => { const x = ks.filter(k => k.bidangId === b.id), a = sum(x.map(angg)), r = sum(x.map(real)); return `<tr><td>${esc(b.nama)}</td><td class="num">${rp(a)}</td><td class="num">${rp(r)}</td><td class="num">${pct(a ? r / a * 100 : 0)}</td></tr>`; }))}</div>
   </div>
-  <div class="card mt"><h3>Rincian per kegiatan</h3>${table(['Kegiatan', 'Status', 'Anggaran', 'Realisasi', 'Sisa', 'Serapan', ''], ks.map(k => { const a = angg(k), r = real(k); return `<tr><td>${klink(k)}</td><td>${chip(k.status)}</td><td class="num">${rp(a)}</td><td class="num">${rp(r)}</td><td class="num" ${r > a ? 'style="color:var(--red)"' : ''}>${rp(a - r)}</td><td style="min-width:120px">${bar(a ? r / a * 100 : 0, r > a ? 'r' : 'n')}</td><td>${can.biaya(k) ? `<button class="btn sm" data-act="realAdd" data-id="${k.id}">+ Realisasi</button>` : ''}</td></tr>`; }), `<tr><td colspan="2">Jumlah</td><td class="num">${rp(tot)}</td><td class="num">${rp(rl)}</td><td class="num">${rp(tot - rl)}</td><td colspan="2"></td></tr>`) || empty('Belum ada kegiatan yang disahkan')}</div>`;
+  <div class="card mt"><h3>Rincian per kegiatan</h3>${table(['Kegiatan', 'Status', 'Anggaran', 'Realisasi', 'Sisa', 'Serapan', ''], ks.map(k => { const a = angg(k), r = real(k); return `<tr><td>${klink(k)}</td><td>${chip(k.status)}</td><td class="num">${rp(a)}</td><td class="num">${rp(r)}</td><td class="num" ${r > a ? 'style="color:var(--red)"' : ''}>${rp(a - r)}</td><td style="min-width:120px">${bar(a ? r / a * 100 : 0, r > a ? 'r' : 'n')}</td><td>${can.biaya(k) ? `<button class="btn sm" data-act="realAdd" data-id="${k.id}">${ico('plus')} Realisasi</button>` : ''}</td></tr>`; }), `<tr><td colspan="2">Jumlah</td><td class="num">${rp(tot)}</td><td class="num">${rp(rl)}</td><td class="num">${rp(tot - rl)}</td><td colspan="2"></td></tr>`) || empty('Belum ada kegiatan yang disahkan')}</div>`;
 };
 
 V.monitoring = () => {
@@ -311,7 +317,7 @@ function lapData() {
 V.laporan = () => {
   const { p, ks, tot, rl } = lapData(), L = ui.lap;
   const n = { bulanan: BULAN, triwulan: ['Triwulan I', 'Triwulan II', 'Triwulan III', 'Triwulan IV'], semester: ['Semester I', 'Semester II'], tahunan: [] }[L.jenis];
-  return head('Laporan', 'Laporan bulanan, triwulan, semester, dan tahunan', `<button class="btn" data-act="lapXlsx">Ekspor Excel</button><button class="btn primary" data-act="lapPdf">Cetak / PDF</button>`) + `
+  return head('Laporan', 'Laporan bulanan, triwulan, semester, dan tahunan', `<button class="btn" data-act="lapXlsx">${ico('download')} Ekspor Excel</button><button class="btn primary" data-act="lapPdf">${ico('print')} Cetak / PDF</button>`) + `
   <div class="card"><div class="btns" style="margin-bottom:12px">
     <select data-change="lapJenis" aria-label="Jenis laporan" style="width:auto">${['bulanan', 'triwulan', 'semester', 'tahunan'].map(j => `<option value="${j}" ${L.jenis === j ? 'selected' : ''}>Laporan ${j}</option>`).join('')}</select>
     ${n.length ? `<select data-change="lapIdx" aria-label="Periode" style="width:auto">${n.map((x, i) => `<option value="${i}" ${L.idx === i ? 'selected' : ''}>${x}</option>`).join('')}</select>` : ''}</div>
@@ -323,7 +329,7 @@ const lapTable = (ks, tot, rl) => table(['No', 'Kegiatan', 'Bidang', 'Jadwal', '
 
 V.dokumen = () => {
   const ds = db.dokumen.filter(d => !ui.docKat || d.kategori === ui.docKat).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  return head('Dokumen', 'SK, proposal, TOR/KAK, dokumen kegiatan, undangan, daftar hadir, dokumentasi, dan laporan', `<select data-change="docKat" aria-label="Saring kategori" style="width:auto"><option value="">Semua kategori</option>${KATEGORI.map(k => `<option ${ui.docKat === k ? 'selected' : ''}>${k}</option>`).join('')}</select><button class="btn primary" data-act="docAdd">+ Unggah dokumen</button>`) + `
+  return head('Dokumen', 'SK, proposal, TOR/KAK, dokumen kegiatan, undangan, daftar hadir, dokumentasi, dan laporan', `<select data-change="docKat" aria-label="Saring kategori" style="width:auto"><option value="">Semua kategori</option>${KATEGORI.map(k => `<option ${ui.docKat === k ? 'selected' : ''}>${k}</option>`).join('')}</select><button class="btn primary" data-act="docAdd">${ico('plus')} Unggah dokumen</button>`) + `
   <div class="card">${docTable(ds) || empty('Belum ada dokumen')}</div>
   <p class="small muted mt">Berkas maksimal ±700 KB (foto dikecilkan otomatis). Untuk berkas lebih besar, simpan di Google Drive lalu tempel tautannya.</p>`;
 };
@@ -332,11 +338,11 @@ const docTable = ds => table(['Dokumen', 'Kategori', 'Kegiatan', 'Diunggah', '']
 V.pengguna = () => {
   const adm = is('admin'), demo = st.mode === 'demo';
   const M = [['Kelola pengguna, bidang, dan hak akses', 1, 0, 0, 0, 0], ['Sunting profil organisasi', 1, 0, 1, 0, 0], ['Kelola program kerja', 1, 1, 1, 0, 'bidang sendiri'], ['Buat dan ajukan usulan kegiatan', 1, 0, 0, 0, 'bidang sendiri'], ['Verifikasi usulan / minta revisi', 1, 0, 1, 0, 0], ['Setujui dan sahkan program', 1, 1, 0, 0, 0], ['Perbarui progres, kendala, realisasi indikator', 1, 0, 0, 0, 'bidang sendiri'], ['Catat realisasi biaya', 1, 0, 0, 1, 0], ['Catat tindak lanjut kendala', 1, 0, 1, 0, 'bidang sendiri'], ['Kelola agenda', 1, 0, 1, 0, 1], ['Unggah dokumen, lihat dashboard dan laporan', 1, 1, 1, 1, 1]];
-  return head('Manajemen Pengguna', 'Admin, ketua kolegium, sekretaris, bendahara, dan ketua bidang', adm && demo ? `<button class="btn primary" data-act="userAdd">+ Pengguna</button>` : '') + `
+  return head('Manajemen Pengguna', 'Admin, ketua kolegium, sekretaris, bendahara, dan ketua bidang', adm && demo ? `<button class="btn primary" data-act="userAdd">${ico('plus')} Pengguna</button>` : '') + `
   ${!demo ? `<div class="card" style="margin-bottom:14px"><b>Cara menambah pengguna:</b> pengurus mendaftar sendiri di halaman masuk (tab “Daftar”), lalu Admin mengaktifkan akun serta menetapkan peran dan bidangnya di tabel ini.</div>` : ''}
   <div class="card"><h3>Pengguna</h3>${table(['Nama', 'Email', 'Peran', 'Bidang', 'Status', ''], db.users.map(u => `<tr><td><b>${esc(u.nama)}</b>${u.id === st.uid ? ' <span class="chip blue">Anda</span>' : ''}</td><td>${esc(u.email)}</td><td>${ROLE[u.role] || esc(u.role)}</td><td>${u.role === 'koordinator' ? esc(bidang(u.bidangId)) : '–'}</td><td><span class="chip ${u.aktif ? 'green' : 'amber'}">${u.aktif ? 'Aktif' : 'Menunggu aktivasi'}</span></td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="userEdit" data-id="${u.id}">Ubah</button>${u.id !== st.uid ? `<button class="btn sm danger" data-act="userDel" data-id="${u.id}">Hapus</button>` : ''}</div>` : ''}</td></tr>`))}</div>
   <div class="grid g2 mt">
-    <div class="card"><div class="chead"><h3>Bidang</h3>${adm ? `<button class="btn sm" data-act="bidAdd">+ Bidang</button>` : ''}</div>${table(['Nama bidang', 'Ketua bidang', ''], db.bidang.map(b => `<tr><td>${esc(b.nama)}</td><td>${esc(db.users.filter(u => u.role === 'koordinator' && u.bidangId === b.id).map(u => u.nama).join(', ')) || '–'}</td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="bidEdit" data-id="${b.id}">Ubah</button><button class="btn sm danger" data-act="bidDel" data-id="${b.id}">Hapus</button></div>` : ''}</td></tr>`)) || empty('Belum ada bidang')}</div>
+    <div class="card"><div class="chead"><h3>Bidang</h3>${adm ? `<button class="btn sm" data-act="bidAdd">${ico('plus')} Bidang</button>` : ''}</div>${table(['Nama bidang', 'Ketua bidang', ''], db.bidang.map(b => `<tr><td>${esc(b.nama)}</td><td>${esc(db.users.filter(u => u.role === 'koordinator' && u.bidangId === b.id).map(u => u.nama).join(', ')) || '–'}</td><td>${adm ? `<div class="btns"><button class="btn sm" data-act="bidEdit" data-id="${b.id}">Ubah</button><button class="btn sm danger" data-act="bidDel" data-id="${b.id}">Hapus</button></div>` : ''}</td></tr>`)) || empty('Belum ada bidang')}</div>
     <div class="card"><h3>Hak akses per peran</h3><p class="small muted" style="margin:0 0 8px">Admin merangkap semua fungsi (ketua kolegium, sekretaris, bendahara, dan ketua bidang mana pun). Peran sekretaris dan bendahara boleh dipegang lebih dari satu orang.</p>${table(['Wewenang', 'Admin', 'Ketua Kol.', 'Sekr.', 'Bend.', 'Ketua Bid.'], M.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td>${v === 1 ? '✓' : v ? `<span class="small">${v}</span>` : '<span class="muted">–</span>'}</td>`).join('')}</tr>`))}</div>
   </div>
   ${demo && adm ? `<div class="card mt"><h3>Data demo</h3><p class="muted" style="margin:0 0 10px">Mode demo menyimpan data di browser ini saja. Hubungkan Firebase (lihat README) agar data tersimpan bersama.</p><button class="btn danger" data-act="resetDemo">Kembalikan data contoh</button></div>` : ''}`;
@@ -372,16 +378,16 @@ function vKegiatan(id) {
     <dl class="kv mt"><dt>Program</dt><dd>${esc(program(k.programId))}</dd><dt>Tujuan</dt><dd>${esc(k.tujuan) || '–'}</dd><dt>Sasaran</dt><dd>${esc(k.sasaran) || '–'}</dd><dt>Jadwal</dt><dd>${tgl(k.mulai)} – ${tgl(k.selesai)}</dd><dt>Lokasi</dt><dd>${esc(k.lokasi) || '–'}</dd><dt>Penanggung jawab</dt><dd>${esc(k.penanggungJawab) || '–'}</dd><dt>Progres</dt><dd style="max-width:320px">${bar(k.progres, k.status === 'selesai' ? 'g' : '')}</dd></dl></div>
   ${['draft', 'revisi'].includes(k.status) ? `<div class="card mt syarat"><h3>Syarat pengajuan</h3><ul><li class="${(k.indikator || []).length ? 'ok' : 'no'}">Minimal satu indikator keberhasilan</li><li class="${hasDokUsulan(k) ? 'ok' : 'no'}">KAK/TOR, proposal, atau dokumen kegiatan diunggah ${!hasDokUsulan(k) && milik(k) ? `<button class="btn sm primary" data-act="docAdd" data-id="${k.id}" data-kat="TOR/KAK">Unggah sekarang</button>` : ''}</li><li class="${(k.rab || []).length ? 'ok' : 'opt'}">Rencana anggaran biaya (dianjurkan)</li></ul></div>` : ''}
   <div class="grid g2 mt">
-    <div class="card"><div class="chead"><h3>Indikator keberhasilan</h3>${ed ? `<button class="btn sm" data-act="indAdd" data-id="${k.id}">+ Indikator</button>` : ''}</div>
+    <div class="card"><div class="chead"><h3>Indikator keberhasilan</h3>${ed ? `<button class="btn sm" data-act="indAdd" data-id="${k.id}">${ico('plus')} Indikator</button>` : ''}</div>
       ${table(['Indikator', 'Target', 'Realisasi', 'Capaian', ''], (k.indikator || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="num">${i.target} ${esc(i.satuan)}</td><td class="num">${i.realisasi || 0}</td><td class="num">${pct(i.target ? i.realisasi / i.target * 100 : 0)}</td><td><div class="btns">${ed ? `<button class="btn sm" data-act="indEdit" data-id="${k.id}" data-sub="${i.id}">Ubah</button><button class="btn sm danger" data-act="indDel" data-id="${k.id}" data-sub="${i.id}">Hapus</button>` : can.realInd(k) ? `<button class="btn sm" data-act="indReal" data-id="${k.id}" data-sub="${i.id}">Isi realisasi</button>` : ''}</div></td></tr>`)) || empty('Belum ada indikator. Setiap kegiatan perlu minimal satu indikator terukur.')}</div>
-    <div class="card"><div class="chead"><h3>Kendala &amp; tindak lanjut</h3>${milik(k) && AKTIF.includes(k.status) ? `<button class="btn sm" data-act="kdAdd" data-id="${k.id}">+ Kendala</button>` : ''}</div>
+    <div class="card"><div class="chead"><h3>Kendala &amp; tindak lanjut</h3>${milik(k) && AKTIF.includes(k.status) ? `<button class="btn sm" data-act="kdAdd" data-id="${k.id}">${ico('plus')} Kendala</button>` : ''}</div>
       ${table(['Tanggal', 'Kendala', 'Tindak lanjut', 'Status'], (k.kendala || []).map(x => `<tr><td class="nowrap">${tgl(x.tanggal)}</td><td>${esc(x.uraian)}</td><td>${esc(x.tindakLanjut) || '–'}</td><td>${esc(x.status)}</td></tr>`)) || empty('Tidak ada kendala tercatat')}</div>
   </div>
-  <div class="card mt"><div class="chead"><h3>Rencana anggaran biaya (RAB)</h3>${ed ? `<button class="btn sm" data-act="rabAdd" data-id="${k.id}">+ Baris RAB</button>` : ''}</div>
+  <div class="card mt"><div class="chead"><h3>Rencana anggaran biaya (RAB)</h3>${ed ? `<button class="btn sm" data-act="rabAdd" data-id="${k.id}">${ico('plus')} Baris RAB</button>` : ''}</div>
     ${table(['Uraian', 'Volume', 'Harga satuan', 'Jumlah', 'Sumber dana', ''], (k.rab || []).map(x => `<tr><td>${esc(x.uraian)}</td><td class="num">${x.volume} ${esc(x.satuan)}</td><td class="num">${rp(x.harga)}</td><td class="num">${rp(x.volume * x.harga)}</td><td>${esc(x.sumber)}</td><td>${ed ? `<div class="btns"><button class="btn sm" data-act="rabEdit" data-id="${k.id}" data-sub="${x.id}">Ubah</button><button class="btn sm danger" data-act="rabDel" data-id="${k.id}" data-sub="${x.id}">Hapus</button></div>` : ''}</td></tr>`), `<tr><td colspan="3">Total anggaran</td><td class="num">${rp(a)}</td><td colspan="2"></td></tr>`) || empty('RAB belum diisi')}</div>
-  <div class="card mt"><div class="chead"><h3>Realisasi biaya</h3><span class="muted small">${rp(r)} dari ${rp(a)} (${pct(a ? r / a * 100 : 0)})</span>${can.biaya(k) ? `<button class="btn sm" data-act="realAdd" data-id="${k.id}">+ Realisasi</button>` : ''}</div>
+  <div class="card mt"><div class="chead"><h3>Realisasi biaya</h3><span class="muted small">${rp(r)} dari ${rp(a)} (${pct(a ? r / a * 100 : 0)})</span>${can.biaya(k) ? `<button class="btn sm" data-act="realAdd" data-id="${k.id}">${ico('plus')} Realisasi</button>` : ''}</div>
     ${table(['Tanggal', 'Uraian', 'Jumlah', ''], (k.realisasi || []).map(x => `<tr><td class="nowrap">${tgl(x.tanggal)}</td><td>${esc(x.uraian)}</td><td class="num">${rp(x.jumlah)}</td><td>${can.biaya(k) ? `<button class="btn sm danger" data-act="realDel" data-id="${k.id}" data-sub="${x.id}">Hapus</button>` : ''}</td></tr>`)) || empty('Belum ada realisasi (dicatat bendahara setelah kegiatan disahkan)')}</div>
-  <div class="card mt"><div class="chead"><h3>Dokumentasi digital</h3><button class="btn sm" data-act="docAdd" data-id="${k.id}">+ Unggah</button></div>${docTable(docs) || empty('Belum ada foto, undangan, daftar hadir, atau laporan')}</div>
+  <div class="card mt"><div class="chead"><h3>Dokumentasi digital</h3><button class="btn sm" data-act="docAdd" data-id="${k.id}">${ico('plus')} Unggah</button></div>${docTable(docs) || empty('Belum ada foto, undangan, daftar hadir, atau laporan')}</div>
   <div class="card mt"><h3>Riwayat</h3>${table(['Tanggal', 'Oleh', 'Aksi', 'Catatan'], (k.riwayat || []).slice().reverse().map(x => `<tr><td class="nowrap">${tgl(x.tanggal)}</td><td>${esc(x.oleh)}</td><td>${esc(x.aksi)}</td><td>${esc(x.catatan) || '–'}</td></tr>`))}</div>`;
 }
 
@@ -532,6 +538,7 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #666;padding:4p
   // sesi
   lupa: () => { const em = $('#auth') ? $('#auth').elements.email.value.trim() : ''; form('Lupa kata sandi', [{ name: 'email', label: 'Email akun Anda', type: 'email', required: true, full: true, value: em, hint: 'Tautan untuk membuat kata sandi baru akan dikirim ke email ini. Periksa juga folder Spam.' }], async v => { await S.resetPassword(v.email); toast('Jika email terdaftar, tautan atur ulang kata sandi sudah dikirim.'); }, 'Kirim tautan'); },
   gantiSandi: () => form('Ubah kata sandi', [{ name: 'lama', label: 'Kata sandi saat ini', type: 'password', required: true, full: true }, { name: 'baru', label: 'Kata sandi baru', type: 'password', required: true, hint: 'Minimal 6 karakter' }, { name: 'baru2', label: 'Ulangi kata sandi baru', type: 'password', required: true }], async v => { if (v.baru.length < 6) return 'Kata sandi baru minimal 6 karakter.'; if (v.baru !== v.baru2) return 'Kata sandi baru dan ulangannya tidak sama.'; if (v.baru === v.lama) return 'Kata sandi baru harus berbeda dari yang lama.'; try { await S.changePassword(v.lama, v.baru); } catch (e) { if (/invalid-credential|wrong-password/.test(e.code || '')) return 'Kata sandi saat ini salah.'; throw e; } toast('Kata sandi berhasil diubah.'); }, 'Ubah kata sandi'),
+  lihatSandi: () => document.querySelectorAll('#auth input[name^=pw]').forEach(x => { x.type = x.type === 'password' ? 'text' : 'password'; }),
   logout: () => { ui.authTab = 'masuk'; ui.authErr = ''; S.logout(); }, menu: () => $('.side').classList.toggle('open'),
   authTab: ({ id }) => { ui.authTab = id; ui.authErr = ''; render(); },
   buatProfil: async () => { try { await S.ensureProfile(st.email.split('@')[0]); } catch (e) { toast(fbErr(e), true); } }
@@ -549,15 +556,24 @@ const C = {
 /* ================= shell & routing ================= */
 function vAuth() {
   const daftar = ui.authTab === 'daftar';
-  return `<div class="center"><div class="card login"><img src="assets/logo.png" alt="Kolegium Perekam Medis dan Informasi Kesehatan"><h2 style="text-align:center;margin-bottom:4px">Sistem Informasi Program Kerja</h2><p class="muted small" style="text-align:center;margin:0 0 14px">Perencanaan, pelaksanaan, monitoring, dan evaluasi</p>
-    <div class="tabs"><button class="${daftar ? '' : 'on'}" data-act="authTab" data-id="masuk">Masuk</button><button class="${daftar ? 'on' : ''}" data-act="authTab" data-id="daftar">Daftar</button></div>
-    <form id="auth">${daftar ? `<label class="f">Nama lengkap<input name="nama" required></label>` : ''}<label class="f">Email<input name="email" type="email" required autocomplete="username"></label><label class="f">Kata sandi${daftar ? '<small>Pilih sendiri, minimal 6 karakter</small>' : ''}<input name="pw" type="password" required minlength="6" autocomplete="${daftar ? 'new-password' : 'current-password'}"></label>${daftar ? `<label class="f">Ulangi kata sandi<input name="pw2" type="password" required minlength="6" autocomplete="new-password"></label>` : ''}
-    ${ui.authErr ? `<div class="err" style="margin:0">${esc(ui.authErr)}</div>` : ''}<button class="btn primary" style="justify-content:center">${daftar ? 'Daftar' : 'Masuk'}</button>
-    ${daftar ? `<p class="small muted" style="margin:0">Pendaftar pertama menjadi Admin. Pendaftar berikutnya menunggu aktivasi oleh Admin.</p>` : `<button type="button" class="btn" data-act="lupa" style="justify-content:center">Lupa kata sandi?</button>`}</form></div></div>`;
+  const F = [['users', 'Multi-bidang', 'Tiap bidang menyusun dan mengelola program kerjanya'], ['target', 'Target & indikator', 'Setiap kegiatan punya indikator terukur'], ['mon', 'Monitoring progres', 'Capaian kegiatan tampil dalam persentase'], ['bell', 'Pengingat tenggat', 'Batas pengajuan dan laporan tidak terlewat'], ['doc', 'Dokumentasi digital', 'KAK, undangan, daftar hadir, foto, laporan'], ['rep', 'Laporan siap unduh', 'Excel, Word, dan PDF berkop']];
+  const inp = (ic, html) => `<span class="inp">${ico(ic)}${html}</span>`;
+  return `<div class="auth"><section class="hero"><div class="leaf l1"></div><div class="leaf l2"></div><div class="leaf l3"></div>
+    <div class="hero-in"><span class="pill">Kolegium Perekam Medis dan Informasi Kesehatan</span><h1>Sistem Informasi<br>Program Kerja</h1><p class="lead">Satu tempat untuk perencanaan, pengajuan, persetujuan, pelaksanaan, monitoring, dan evaluasi program kerja kolegium.</p>
+    <ul class="feat">${F.map(([i, t, d]) => `<li><span class="fi">${ico(i)}</span><div><b>${t}</b><span>${d}</span></div></li>`).join('')}</ul></div></section>
+  <section class="pane"><div class="pane-in"><img src="assets/logo.png" alt="Kolegium Perekam Medis dan Informasi Kesehatan"><h2>${daftar ? 'Buat akun pengurus' : 'Selamat datang'}</h2><p class="muted" style="margin:2px 0 16px">${daftar ? 'Pilih kata sandi Anda sendiri. Akun aktif setelah disetujui Admin.' : 'Masuk untuk mengelola program kerja.'}</p>
+    <div class="seg"><button class="${daftar ? '' : 'on'}" data-act="authTab" data-id="masuk">Masuk</button><button class="${daftar ? 'on' : ''}" data-act="authTab" data-id="daftar">Daftar</button></div>
+    <form id="auth">${daftar ? `<label class="f">Nama lengkap${inp('user', '<input name="nama" required placeholder="Nama dan gelar">')}</label>` : ''}
+      <label class="f">Email${inp('mail', '<input name="email" type="email" required autocomplete="username" placeholder="nama@email.com">')}</label>
+      <label class="f">Kata sandi${inp('lock', `<input name="pw" type="password" required minlength="6" autocomplete="${daftar ? 'new-password' : 'current-password'}" placeholder="Minimal 6 karakter"><button type="button" class="eye" data-act="lihatSandi" aria-label="Tampilkan kata sandi">${ico('eye')}</button>`)}</label>
+      ${daftar ? `<label class="f">Ulangi kata sandi${inp('lock', '<input name="pw2" type="password" required minlength="6" autocomplete="new-password" placeholder="Ketik ulang kata sandi">')}</label>` : ''}
+      ${ui.authErr ? `<div class="err" style="margin:0">${esc(ui.authErr)}</div>` : ''}<button class="btn primary big">${daftar ? 'Daftar' : 'Masuk'}</button>
+      ${daftar ? `<p class="small muted" style="margin:0;text-align:center">Pendaftar pertama menjadi Admin. Pendaftar berikutnya menunggu aktivasi oleh Admin.</p>` : `<button type="button" class="link" data-act="lupa">${ico('key')} Lupa kata sandi?</button>`}</form>
+    <p class="small muted foot">${esc('Jl Hang Jebat III Blok F3, Kebayoran Baru, Jakarta Selatan 12120')}</p></div></section></div>`;
 }
 function vPending() {
   const p = st.profile;
-  return `<div class="center"><div class="card login" style="text-align:center"><img src="assets/logo.png" alt=""><h2>${p ? 'Menunggu aktivasi' : 'Profil belum dibuat'}</h2><p class="muted">${p ? `Akun <b>${esc(st.email)}</b> sudah terdaftar. Admin perlu mengaktifkan akun dan menetapkan peran Anda sebelum dapat digunakan.` : `Akun <b>${esc(st.email)}</b> belum memiliki profil pengguna.`}</p><div class="btns" style="justify-content:center">${p ? '' : `<button class="btn primary" data-act="buatProfil">Buat profil</button>`}<button class="btn" data-act="logout">Keluar</button></div></div></div>`;
+  return `<div class="center authbg"><div class="card login" style="text-align:center"><img src="assets/logo.png" alt=""><span class="tico amber" style="margin:0 auto 10px">${ico(p ? 'clock' : 'user')}</span><h2>${p ? 'Menunggu aktivasi' : 'Profil belum dibuat'}</h2><p class="muted">${p ? `Akun <b>${esc(st.email)}</b> sudah terdaftar. Admin perlu mengaktifkan akun dan menetapkan peran Anda sebelum dapat digunakan.` : `Akun <b>${esc(st.email)}</b> belum memiliki profil pengguna.`}</p><div class="btns" style="justify-content:center">${p ? '' : `<button class="btn primary" data-act="buatProfil">Buat profil</button>`}<button class="btn" data-act="logout">Keluar</button></div></div></div>`;
 }
 function daftarTahun() {
   const y = new Date().getFullYear(), r = [];
@@ -593,8 +609,8 @@ function render() {
     <div class="foot">${esc(db.org.alamat || '')}<br>${esc(db.org.email || '')}</div></aside>
   <div class="main">${st.mode === 'demo' ? `<div class="demo"><b>Mode demo</b> — data contoh, tersimpan di browser ini saja. Isi <code>public/js/firebase-config.js</code> untuk memakai Firebase (lihat README).</div>` : ''}
     <header class="top"><button class="btn menu-btn" data-act="menu" aria-label="Menu">${ico('menu')}</button>
-      <label class="small muted">Tahun <select data-change="tahun">${years.map(t => `<option ${t === ui.tahun ? 'selected' : ''}>${t}</option>`).join('')}<option value="+">+ Tambah tahun…</option></select></label><div class="sp"></div>
-      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="gantiSandi">Ubah kata sandi</button><button class="btn sm" data-act="logout">Keluar</button>`}
+      <label class="small muted">Tahun <select data-change="tahun">${years.map(t => `<option ${t === ui.tahun ? 'selected' : ''}>${t}</option>`).join('')}<option value="+">${ico('plus')} Tambah tahun…</option></select></label><div class="sp"></div>
+      ${st.mode === 'demo' ? `<label class="small muted">Masuk sebagai <select data-change="userSwitch">${db.users.filter(x => x.aktif).map(x => `<option value="${x.id}" ${x.id === st.uid ? 'selected' : ''}>${esc(x.nama)}</option>`).join('')}</select></label>` : `<div class="who"><b>${esc(u.nama)}</b><span class="small muted">${ROLE[u.role]}${u.role === 'koordinator' ? ' · ' + esc(bidang(u.bidangId)) : ''}</span></div><button class="btn sm" data-act="gantiSandi">${ico('key')} Ubah kata sandi</button><button class="btn sm" data-act="logout">${ico('out')} Keluar</button>`}
     </header><main class="page">${route === 'kegiatan' ? vKegiatan(arg) : (V[route] || V.dashboard)()}</main></div></div>`;
   window.scrollTo(0, same ? y : 0);
 }
