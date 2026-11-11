@@ -22,6 +22,7 @@ const ST = {
 const AKTIF = ['disetujui', 'berjalan', 'selesai'];
 const KATEGORI = ['SK', 'Proposal', 'TOR/KAK', 'Undangan', 'Daftar Hadir', 'Dokumentasi', 'Laporan', 'AD/ART', 'Lainnya'];
 const JENIS_KEG = ['Kegiatan', 'Rapat', 'Pelatihan'];
+const SASARAN = ['PMIK', 'Dosen', 'Tenaga Kesehatan'];
 
 const ICON = {
   home: 'M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6', org: 'M4 21V5l8-2v18M12 9l8 2v10M2 21h20M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2',
@@ -116,6 +117,10 @@ function notifs() {
 function fieldHtml(f) {
   const a = `name="${f.name}" ${f.required ? 'required' : ''}`, v = f.value ?? '';
   let inp;
+  if (f.type === 'checks') {
+    const cur = String(v).split(',').map(x => x.trim()).filter(Boolean), lain = cur.filter(x => !f.options.includes(x)).join(', ');
+    return `<fieldset class="f full checks"><legend>${esc(f.label)}</legend><div class="opts">${f.options.map(o => `<label><input type="checkbox" name="${f.name}" value="${esc(o)}" ${cur.includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div><input name="${f.name}__lain" value="${esc(lain)}" placeholder="Lainnya (opsional)" aria-label="${esc(f.label)} lainnya">${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</fieldset>`;
+  }
   if (f.type === 'textarea') inp = `<textarea ${a}>${esc(v)}</textarea>`;
   else if (f.type === 'select') inp = `<select ${a}>${f.options.map(([val, l]) => `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   else if (f.type === 'file') inp = `<input type="file" ${a}>`;
@@ -131,7 +136,7 @@ function form(title, fields, onSave, okLabel = 'Simpan') {
   fm.onsubmit = async e => {
     e.preventDefault();
     const v = {}; $('.err', dlg).hidden = true;
-    fields.forEach(f => { const el = fm.elements[f.name]; v[f.name] = f.type === 'number' ? Number(el.value || 0) : f.type === 'file' ? el.files[0] : f.type === 'password' ? el.value : el.value.trim(); });
+    fields.forEach(f => { const el = fm.elements[f.name]; if (f.type === 'checks') { v[f.name] = [...fm.querySelectorAll(`input[name="${f.name}"]:checked`)].map(x => x.value).concat(fm.elements[f.name + '__lain'].value.split(',').map(x => x.trim()).filter(Boolean)).join(', '); return; } v[f.name] = f.type === 'number' ? Number(el.value || 0) : f.type === 'file' ? el.files[0] : f.type === 'password' ? el.value : el.value.trim(); });
     try {
       const err = await onSave(v);
       if (err) { const b = $('.err', dlg); b.textContent = err; b.hidden = false; return; }
@@ -393,7 +398,7 @@ function kegForm(k) {
 const catatan = (title, cb, required = true) => form(title, [{ name: 'c', label: 'Catatan', type: 'textarea', required }], v => cb(v.c));
 const indFields = i => [{ name: 'nama', label: 'Indikator keberhasilan', required: true, full: true, value: i?.nama, hint: 'Contoh: jumlah peserta, dokumen tersusun, tingkat kelulusan' }, { name: 'target', label: 'Target', type: 'number', required: true, value: i?.target }, { name: 'satuan', label: 'Satuan', required: true, value: i?.satuan }];
 const rabFields = x => [{ name: 'uraian', label: 'Uraian', required: true, full: true, value: x?.uraian }, { name: 'volume', label: 'Volume', type: 'number', required: true, value: x?.volume ?? 1 }, { name: 'satuan', label: 'Satuan', value: x?.satuan }, { name: 'harga', label: 'Harga satuan (Rp)', type: 'number', required: true, value: x?.harga }, { name: 'sumber', label: 'Sumber dana', value: x?.sumber, hint: 'Mis. iuran, sponsor, hibah' }];
-const progFields = p => { const kor = is('koordinator'); return [{ name: 'nama', label: 'Nama program', required: true, full: true, value: p?.nama }, { name: 'jenis', label: 'Jenis program', type: 'select', options: kor ? [['bidang', 'Program per bidang']] : [['strategis', 'Program strategis'], ['tahunan', 'Program tahunan'], ['bidang', 'Program per bidang']], value: p?.jenis || ui.progTab }, { name: 'bidangId', label: 'Bidang (untuk program bidang)', type: 'select', options: kor ? [[me().bidangId, bidang(me().bidangId)]] : optBidang('—'), value: p?.bidangId }, { name: 'tahun', label: 'Tahun program', type: 'select', options: daftarTahun().map(t => [t, t]), value: p?.tahun || ui.tahun, hint: 'Tidak dipakai untuk program strategis (lintas tahun)', full: true }, { name: 'sasaran', label: 'Sasaran / target', full: true, value: p?.sasaran }, { name: 'deskripsi', label: 'Deskripsi', type: 'textarea', value: p?.deskripsi }]; };
+const progFields = p => { const kor = is('koordinator'); return [{ name: 'nama', label: 'Nama program', required: true, full: true, value: p?.nama }, { name: 'jenis', label: 'Jenis program', type: 'select', options: kor ? [['bidang', 'Program per bidang']] : [['strategis', 'Program strategis'], ['tahunan', 'Program tahunan'], ['bidang', 'Program per bidang']], value: p?.jenis || ui.progTab }, { name: 'bidangId', label: 'Bidang (untuk program bidang)', type: 'select', options: kor ? [[me().bidangId, bidang(me().bidangId)]] : optBidang('—'), value: p?.bidangId }, { name: 'tahun', label: 'Tahun program', type: 'select', options: daftarTahun().map(t => [t, t]), value: p?.tahun || ui.tahun, hint: 'Tidak dipakai untuk program strategis (lintas tahun)', full: true }, { name: 'sasaran', label: 'Sasaran / target', type: 'checks', options: SASARAN, value: p?.sasaran, hint: 'Boleh memilih lebih dari satu' }, { name: 'deskripsi', label: 'Deskripsi', type: 'textarea', value: p?.deskripsi }]; };
 const progSave = (p, v) => { if (v.jenis === 'bidang' && !v.bidangId) return 'Pilih bidang untuk program per bidang.'; Object.assign(p, v, { tahun: v.jenis === 'strategis' ? '' : v.tahun, bidangId: v.jenis === 'bidang' ? v.bidangId : '' }); ui.progTab = v.jenis; if (v.jenis !== 'strategis') setTahun(v.tahun); };
 const agFields = a => [{ name: 'judul', label: 'Judul agenda', required: true, full: true, value: a?.judul }, { name: 'jenis', label: 'Jenis', type: 'select', options: ['Rapat', 'Pelatihan', 'Kegiatan'].map(x => [x, x]), value: a?.jenis }, { name: 'bidangId', label: 'Bidang', type: 'select', options: optBidang('Semua / pengurus inti'), value: a?.bidangId }, { name: 'tanggal', label: 'Tanggal', type: 'date', required: true, value: a?.tanggal || today() }, { name: 'waktu', label: 'Waktu', type: 'time', value: a?.waktu }, { name: 'tempat', label: 'Tempat', full: true, value: a?.tempat }];
 const userFields = (u, baru) => [{ name: 'nama', label: 'Nama', required: true, value: u?.nama }, ...(baru ? [{ name: 'email', label: 'Email', type: 'email', value: '' }] : []), { name: 'role', label: 'Peran', type: 'select', options: Object.entries(ROLE), value: u?.role || 'koordinator' }, { name: 'bidangId', label: 'Bidang (ketua bidang)', type: 'select', options: optBidang('—'), value: u?.bidangId }, { name: 'aktif', label: 'Status', type: 'select', options: [['1', 'Aktif'], ['0', 'Nonaktif / menunggu']], value: u ? (u.aktif ? '1' : '0') : '1' }];
